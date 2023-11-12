@@ -12,29 +12,30 @@ struct Settings
     min_coords
     γ
     ϵ
-    cube_lb
-    cube_rb
-    determine_interval
     V
     J
-    function Settings(f, x, n, min_coords, γ, ϵ, cube_lb, cube_rb, determine_interval)
-        Vs = map(e->prepare_V(e,x,min_coords),f)
-        Js = map(e->prepare_J(e,x),Vs)
-        return new(x, n, min_coords, γ, ϵ, cube_lb, cube_rb, determine_interval, Vs, Js)
+    function Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
+        V = prepare_V(f,x,min_coords, H, H_inverse, P)
+        J = prepare_J(V,x)
+        return new(x, n, min_coords, γ, ϵ, V, J)
     end
-end
-
-function get_V(s::Settings, p)
-    return s.V[s.determine_interval(p)]
-end
-
-function get_J(s::Settings, p)
-    return s.J[s.determine_interval(p)]
+    function Settings(f, x, n, min_coords, γ, ϵ)
+        V = prepare_V(f,x,min_coords)
+        J = prepare_J(V,x)
+        return new(x, n, min_coords, γ, ϵ, V, J)
+    end
 end
 
 function prepare_V(f, x, min_coords)
     V = Symbolics.gradient(f, x)
     V[min_coords] .*= -1
+    return V
+end
+
+function prepare_V(f, x, min_coords, H, H_inverse, P)
+    V = Symbolics.gradient(f,x)
+    V[min_coords] .*= -1
+    V = H_inverse(P(H(x) .+ _eval_expr(V,Dict( x .=> H(x))))) .- x
     return V
 end
 
@@ -55,8 +56,7 @@ function compute_direction(point::Vector, i::Integer, S::Vector, s::Settings)
 
     d_nonzero_indices = vcat(S, [i])
     #println("d_nonzero_indices $d_nonzero_indices")
-    J = get_J(s, point)
-    jacobian_Si = J[S, d_nonzero_indices]
+    jacobian_Si = s.J[S, d_nonzero_indices]
     #println("jacobian_Si symbolics: $jacobian_Si")
     jacobian_Si_at_point = _eval_expr(jacobian_Si, Dict(s.x .=> point))
     #println("jacobian_Si_at_point: $jacobian_Si_at_x")
@@ -81,12 +81,11 @@ function compute_direction(point::Vector, i::Integer, S::Vector, s::Settings)
 end
 
 function good_exit(point::Vector, i::Integer, s::Settings)
-    V = get_V(s,point)
-    Vi = _eval_expr(V[i],Dict(s.x .=> point))
+    Vi = _eval_expr(s.V[i],Dict(s.x .=> point))
     xi = point[i]
     zs = abs(Vi) <= s.ϵ
 
-    return zs || (xi == s.cube_lb && Vi < s.ϵ) || (xi == s.cube_rb && Vi > -s.ϵ), zs
+    return zs || (xi == 0 && Vi < s.ϵ) || (xi == 1 && Vi > -s.ϵ), zs
 end
 
 function bad_exit(point::Vector, i::Integer, S::Vector, direction::Vector, s::Settings)
@@ -95,7 +94,7 @@ function bad_exit(point::Vector, i::Integer, S::Vector, direction::Vector, s::Se
     direction_triggering = direction[triggering_coords]
 
     for (j, (pt, dt)) in enumerate(zip(point_triggering, direction_triggering))
-        if (pt == s.cube_lb && dt < 0) || (pt == s.cube_rb && dt > 0)
+        if (pt == 0 && dt < 0) || (pt == 1 && dt > 0)
             return triggering_coords[j]
         end
     end
@@ -107,10 +106,9 @@ function middling_exit(point::Vector, i::Integer, S::Vector, direction::Vector, 
     new_point = point + s.γ*direction
     triggering_coords = setdiff(1:i-1, S)
     point_triggering = point[triggering_coords]
-    V = get_V(s,point)
-    V_triggering = _eval_expr(V[triggering_coords], Dict(s.x .=> new_point))
+    V_triggering = _eval_expr(s.V[triggering_coords], Dict(s.x .=> new_point))
     for (j, (pt, Vt)) in enumerate(zip(point_triggering, V_triggering))
-        if (pt == s.cube_lb && Vt > 0) || (pt == s.cube_rb && Vt < 0)
+        if (pt == 0 && Vt > 0) || (pt == 1 && Vt < 0)
             return triggering_coords[j]
         end
     end
@@ -122,7 +120,7 @@ P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
 
 function execute_stonr(s::Settings)
     # init values
-    point = fill(s.cube_lb,s.n)
+    point = fill(0,s.n)
     i = 1
     S = Vector{Int}()
     pts = []
@@ -130,7 +128,7 @@ function execute_stonr(s::Settings)
     while i <= s.n
         println("starting epoch ($i, $S) at $point")
         while true
-            is_good_exit, is_zs = good_exit(P(point; x_min = s.cube_lb, x_max = s.cube_rb), i, s)
+            is_good_exit, is_zs = good_exit(P(point; x_min = 0, x_max = 1), i, s)
                 if is_good_exit
                     println("good exit at $point")
                     if is_zs
@@ -140,7 +138,7 @@ function execute_stonr(s::Settings)
                     break
                 end
             direction = compute_direction(point, i, S, s)
-            j = bad_exit(P(point; x_min = s.cube_lb, x_max = s.cube_rb), i, S, direction,s)
+            j = bad_exit(P(point; x_min = 0, x_max = 1), i, S, direction,s)
             if j != 0
                 println("bad exit at $point")
                 if j == i
@@ -151,7 +149,7 @@ function execute_stonr(s::Settings)
                 end
                 break
             end
-            j = middling_exit(P(point; x_min = s.cube_lb, x_max = s.cube_rb), i, S, direction,s)
+            j = middling_exit(P(point; x_min = 0, x_max = 1), i, S, direction,s)
             if j != 0
                 println("middling exit at $point")
                 S = vcat(S,[j])
@@ -161,16 +159,16 @@ function execute_stonr(s::Settings)
             direction = compute_direction(point, i, S,s)
             push!(pts, point)
         end
-        point = P(point; x_min = s.cube_lb, x_max = s.cube_rb)
+        point = P(point; x_min = 0, x_max = 1)
     end
 
     return point, pts
 end
 
-function plot_trajectory2D(min_max::Vector, trajectory, s::Settings)
+function plot_trajectory2D(min_max::Vector, trajectory)
     x1_coords = [pt[1] for pt in trajectory]
     x2_coords = [pt[2] for pt in trajectory]
-    scatter(x1_coords, x2_coords; color=:blue, legend = false, xlims = (s.cube_lb,s.cube_rb), ylims = (s.cube_lb,s.cube_rb), markersize = 1, markershape=:auto)
+    scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1, markershape=:auto)
     scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10)
 end
 
