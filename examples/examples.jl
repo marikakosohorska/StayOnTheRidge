@@ -1,5 +1,5 @@
 using Revise
-using Stonr
+using StayOnTheRidge
 using Symbolics
 
 # general hypercube mapping
@@ -16,7 +16,7 @@ function example1()
     ϵ = 1e-2
     f = (x[1]-1/2)*(x[2]-1/2)
     s = Settings(f, x, n, min_coords, γ, ϵ)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -30,7 +30,7 @@ function example2()
     A = [4 -5; -5 100] # this cycle when γ = 1e-4, ϵ = 1e-3
     f = A[1,1]*x[1]*x[2]+A[1,2]*x[1]*(1-x[2])+A[2,1]*(1-x[1])*x[2]+A[2,2]*(1-x[1])*(1-x[2])
     s = Settings(f, x, n,min_coords, γ, ϵ)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -45,7 +45,7 @@ function example3()
     ifelse((x[1]^2 + x[2]^2)/2 < 1, -x[1]*x[2] - 1/20*x[2]^2 + 2/20*(3*((x[1]^2 + x[2]^2)/2)^2 - 2*((x[1]^2 + x[2]^2)/2)^3)*x[2]^2,
         -x[1]*x[2] - 1/20*x[2]^2 + 2/20*x[2]^2))
     s = Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -59,7 +59,7 @@ function example4() # https://link.springer.com/article/10.1007/s10589-019-00141
     q = x[1]+x[4]+1
     f = p/q
     s = Settings(f,x,n,min_coords,γ,ϵ)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -73,7 +73,7 @@ function example5() # https://link.springer.com/article/10.1007/s10589-019-00141
     q = x[1]^2 + x[5]^2 + x[3]*x[6] + 1
     f = p/q
     s = Settings(f,x,n,min_coords,γ,ϵ)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -85,7 +85,7 @@ function example6() # https://arxiv.org/pdf/2109.04178.pdf example 1
     ϵ = 1e-3
     f = 2*x[1]*x[2]^2-x[1]^2-x[2]
     s = Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -97,7 +97,7 @@ function example7() # f1 from https://proceedings.mlr.press/v195/daskalakis23b.h
     ϵ = 1e-5
     f = (4*x[1]^2-(x[2]-3*x[1]+x[1]^3/20)^2-x[2]^4/10)*exp(-(x[1]^2+x[2]^2)/100)
     s = Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 
@@ -108,9 +108,8 @@ function example8() # example 6.3 from https://arxiv.org/pdf/1809.01218.pdf
     γ = 1e-2
     ϵ = 1e-1
     f = sum(x[i]+x[3+i] for i in 1:3) - prod((x[i] - x[3+i]) for i in 1:3)
-    println(f)
     s = Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
-    min_max, trajectory = execute_stonr(s)
+    min_max, trajectory = run_dynamics(s)
     return min_max, trajectory
 end
 

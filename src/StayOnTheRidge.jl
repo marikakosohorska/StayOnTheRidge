@@ -1,10 +1,10 @@
-module Stonr
+module StayOnTheRidge
 
 using Symbolics
 using LinearAlgebra
 using Plots
 
-export execute_stonr, Settings, plot_trajectory2D
+export run_dynamics, Settings, plot_trajectory2D
 
 struct Settings
     x
@@ -118,7 +118,7 @@ end
 
 P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
 
-function execute_stonr(s::Settings)
+function run_dynamics(s::Settings)
     # init values
     point = fill(0,s.n)
     i = 1

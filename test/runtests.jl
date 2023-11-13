@@ -1,6 +1,6 @@
-using Stonr
+using StayOnTheRidge
 using Test
 
-@testset "Stonr.jl" begin
+@testset "StayOnTheRidge.jl" begin
     # Write your tests here.
 end

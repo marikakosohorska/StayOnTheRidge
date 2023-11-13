@@ -1196,7 +1196,7 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
     StatsFunsChainRulesCoreExt = "ChainRulesCore"
     StatsFunsInverseFunctionsExt = "InverseFunctions"
 
-[[deps.Stonr]]
+[[deps.StayOnTheRidge]]
 deps = ["LinearAlgebra", "Plots", "Symbolics"]
 path = ".."
 uuid = "250d2a78-eb8c-4fdb-8c50-61bd39400985"
