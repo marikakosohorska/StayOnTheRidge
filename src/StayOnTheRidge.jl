@@ -7,6 +7,7 @@ using Plots
 export run_dynamics, Settings, plot_trajectory2D
 
 struct Settings
+    f
     x
     n
     min_coords
@@ -15,14 +16,15 @@ struct Settings
     V
     J
     function Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
-        V = prepare_V(f,x,min_coords, H, H_inverse, P)
+        V = prepare_V(f, x, min_coords, H, H_inverse, P)
         J = prepare_J(V,x)
-        return new(x, n, min_coords, γ, ϵ, V, J)
+        return new(f, x, n, min_coords, γ, ϵ, V, J)
     end
     function Settings(f, x, n, min_coords, γ, ϵ)
-        V = prepare_V(f,x,min_coords)
-        J = prepare_J(V,x)
-        return new(x, n, min_coords, γ, ϵ, V, J)
+        V = prepare_V(f, x, min_coords)
+        J = prepare_J(V, x)
+        display(V)
+        return new(f, x, n, min_coords, γ, ϵ, V, J)
     end
 end
 
@@ -33,9 +35,14 @@ function prepare_V(f, x, min_coords)
 end
 
 function prepare_V(f, x, min_coords, H, H_inverse, P)
-    V = Symbolics.gradient(f,x)
+    # f_substituted = _eval_expr(f, Dict(x .=> H(x)))
+    # V = Symbolics.gradient(f_substituted, x) .* [2,2,2,2,2,2]
+    # V[min_coords] .*= -1
+    # V = H_inverse(P(H(x) .+ V)) .- x
+    #V = H_inverse(P(H(x) .+ _eval_expr(V, Dict( x .=> H(x))))) .- x
+    V = Symbolics.gradient(f, x)
     V[min_coords] .*= -1
-    V = H_inverse(P(H(x) .+ _eval_expr(V,Dict( x .=> H(x))))) .- x
+    V = H_inverse(P(H(x) .+ _eval_expr(V, Dict( x .=> H(x))))) .- x
     return V
 end
 
@@ -81,7 +88,7 @@ function compute_direction(point::Vector, i::Integer, S::Vector, s::Settings)
 end
 
 function good_exit(point::Vector, i::Integer, s::Settings)
-    Vi = _eval_expr(s.V[i],Dict(s.x .=> point))
+    Vi = _eval_expr(s.V[i], Dict(s.x .=> point))
     xi = point[i]
     zs = abs(Vi) <= s.ϵ
 
@@ -142,8 +149,8 @@ function run_dynamics(s::Settings)
             if j != 0
                 println("bad exit at $point")
                 if j == i
-                    i -= 1
                     S = setdiff(S, [i-1])
+                    i -= 1
                 else
                     S = setdiff(S, [j])
                 end
@@ -169,7 +176,6 @@ function plot_trajectory2D(min_max::Vector, trajectory)
     x1_coords = [pt[1] for pt in trajectory]
     x2_coords = [pt[2] for pt in trajectory]
     scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1, markershape=:auto)
-    scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10)
+    scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10, title = "($(latexstring(round(min_max[1];digits=3))), $(latexstring(round(min_max[2];digits=3))))")
 end
-
 end

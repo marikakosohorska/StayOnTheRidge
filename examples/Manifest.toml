@@ -2,7 +2,7 @@
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "38512abac204d3055bc0088e2e33f617105cf35e"
+project_hash = "61e1f8b081503fe93e649d111edde2065078f4fe"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "5d2e21d7b0d8c22f67483ef95ebdc39c0e6b6003"
@@ -1197,7 +1197,7 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
     StatsFunsInverseFunctionsExt = "InverseFunctions"
 
 [[deps.StayOnTheRidge]]
-deps = ["LinearAlgebra", "Plots", "Symbolics"]
+deps = ["ForwardDiff", "LaTeXStrings", "Latexify", "LinearAlgebra", "Plots", "Symbolics"]
 path = ".."
 uuid = "250d2a78-eb8c-4fdb-8c50-61bd39400985"
 version = "1.0.0-DEV"
