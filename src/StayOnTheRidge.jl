@@ -18,12 +18,12 @@ struct Settings
     function Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
         V = prepare_V(f, x, min_coords, H, H_inverse, P)
         J = prepare_J(V,x)
+        println(_eval_expr(V,Dict(x .=> [0,0])))
         return new(f, x, n, min_coords, γ, ϵ, V, J)
     end
     function Settings(f, x, n, min_coords, γ, ϵ)
         V = prepare_V(f, x, min_coords)
         J = prepare_J(V, x)
-        display(V)
         return new(f, x, n, min_coords, γ, ϵ, V, J)
     end
 end
@@ -35,14 +35,10 @@ function prepare_V(f, x, min_coords)
 end
 
 function prepare_V(f, x, min_coords, H, H_inverse, P)
-    # f_substituted = _eval_expr(f, Dict(x .=> H(x)))
-    # V = Symbolics.gradient(f_substituted, x) .* [2,2,2,2,2,2]
-    # V[min_coords] .*= -1
-    # V = H_inverse(P(H(x) .+ V)) .- x
-    #V = H_inverse(P(H(x) .+ _eval_expr(V, Dict( x .=> H(x))))) .- x
-    V = Symbolics.gradient(f, x)
+    f_substituted = _eval_expr(f, Dict(x .=> H(x)))
+    V = Symbolics.gradient(f_substituted, x)
     V[min_coords] .*= -1
-    V = H_inverse(P(H(x) .+ _eval_expr(V, Dict( x .=> H(x))))) .- x
+    V = H_inverse(P(H(x) .+ V)) .- x
     return V
 end
 
@@ -86,7 +82,7 @@ function compute_direction(point::Vector, i::Integer, S::Vector, s::Settings)
     #println("Direction is $d")
     return d
 end
-
+ 
 function good_exit(point::Vector, i::Integer, s::Settings)
     Vi = _eval_expr(s.V[i], Dict(s.x .=> point))
     xi = point[i]
@@ -137,8 +133,7 @@ function run_dynamics(s::Settings)
         while true
             is_good_exit, is_zs = good_exit(P(point; x_min = 0, x_max = 1), i, s)
                 if is_good_exit
-                    println("good exit at $point")
-                    if is_zs
+                    if is_zs #&& point[i] != 1 && point[i] != 0
                         S = vcat(S,[i])
                     end
                     i += 1
@@ -176,6 +171,6 @@ function plot_trajectory2D(min_max::Vector, trajectory)
     x1_coords = [pt[1] for pt in trajectory]
     x2_coords = [pt[2] for pt in trajectory]
     scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1, markershape=:auto)
-    scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10, title = "($(latexstring(round(min_max[1];digits=3))), $(latexstring(round(min_max[2];digits=3))))")
+    scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10)
 end
 end
