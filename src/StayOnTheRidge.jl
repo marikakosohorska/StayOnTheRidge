@@ -133,7 +133,7 @@ function run_dynamics(s::Settings)
         while true
             is_good_exit, is_zs = good_exit(P(point; x_min = 0, x_max = 1), i, s)
                 if is_good_exit
-                    if is_zs #&& point[i] != 1 && point[i] != 0
+                    if is_zs
                         S = vcat(S,[i])
                     end
                     i += 1

@@ -7,13 +7,6 @@ H(x; a = -1, b = 1) = a .+ (b .- a) .* x
 H_inverse(x; a = -1, b = 1) = (x .- a) ./ (b .- a)
 P(x; a = -1, b = 1) = min.(max.(x, a), b)
 
-x = [Symbolics.variable(:x,i) for i in 1:2]
-H(x)
-f = x[1]^2+3*x[1]
-Dict(x .=> H(x))
-f_s = Symbolics.value.(Symbolics.substitute(f, Dict(x .=> H(x))))
-Symbolics.gradient(f_s, x)
-
 # example 1 - example from https://proceedings.mlr.press/v195/daskalakis23b.html (Appendix D)
 function example1()
     n = 2
@@ -75,7 +68,6 @@ function example5() # https://link.springer.com/article/10.1007/s10589-019-00141
     p = sum(x[i]+x[n+1-i] for i in 1:3) + x[1]^2*x[5]^2-x[4]^2*x[2]^2 + x[1]^2*x[6]^2-x[4]^2*x[3]^2 + x[2]^2*x[6]^2 - x[5]^2*x[3]^2
     q = x[1]^2 + x[5]^2 + x[3]*x[6] + 1
     f = p/q
-    display(f)
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
 end # X CYKLI SE
@@ -102,18 +94,6 @@ function example7() # f1 from https://proceedings.mlr.press/v195/daskalakis23b.h
     return s
 end # DAVA JINY VYSLEDEK
 
-display((4*x[1]^2-(x[2]-3*x[1]+x[1]^3/20)^2-x[2]^4/10) * exp(-(x[1]^2+x[2]^2)/100))
-f = (4*x[1]^2-(x[2]-3*x[1]+x[1]^3/20)^2-x[2]^4/10) * exp(-(x[1]^2+x[2]^2)/100)
-Symbolics.gradient(f,x)
-f_s = Symbolics.value.(Symbolics.substitute(f, Dict(x .=> H(x))))
-V = Symbolics.gradient(f_s, x)
-V[[1]] .*= -1
-Symbolics.value.(Symbolics.substitute(V, Dict(x .=> [0,0])))
-    H_inverse(P(H([0,0]) .+ Symbolics.value.(Symbolics.substitute(V, Dict(x .=> [0,0])))))-[0,0]
-V = H_inverse(P(H(x) .+ V)) .- x
-H_inverse([0.4,0.4])
-Symbolics.value.(Symbolics.substitute(V, Dict(x .=> [0.75,0.75])))
-
 ### 
 function example8() # example 6.3 i) from https://arxiv.org/pdf/1809.01218.pdf
     n = 6
@@ -122,7 +102,6 @@ function example8() # example 6.3 i) from https://arxiv.org/pdf/1809.01218.pdf
     γ = 1e-4
     ϵ = 1e-1
     f = sum(x[i]+x[3+i] for i in 1:3) - prod((x[i] - x[3+i]) for i in 1:3)
-    display(f)
     s = Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
     return s
 end
@@ -134,7 +113,6 @@ function example9() # example 6.3 ii) from https://arxiv.org/pdf/1809.01218.pdf
     γ = 1e-4
     ϵ = 1e-1
     f = x[1]^2 + x[2]^2 + x[3]^2 - x[4]^2 - x[5]^2 - x[6]^2 + x[1]*x[5] - x[2]*x[4] + x[1]*x[6] - x[3]*x[4] + x[2]*x[6] - x[3]*x[5]
-    display(f)
     s = Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
     return s
 end # DAVA JINY VYSLEDEK
@@ -146,7 +124,6 @@ function example10() # example 6.2 i) from https://arxiv.org/pdf/1809.01218.pdf
     γ = 1e-1
     ϵ = 1e-1
     f = (x[1] + x[2] + x[3] + x[4] + 1)^2 -4*(x[1]*x[2] + x[2]*x[3] + x[3]*x[4] + x[4] + x[1])
-    display(f)
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
 end # ASSUMPTIOIN 1 VIOLATED ALE JE TO POLYNOM ???
@@ -159,9 +136,9 @@ end # ASSUMPTIOIN 1 VIOLATED ALE JE TO POLYNOM ???
 # min_max2, trajectory2 = run_dynamics(settings2)
 # plot_trajectory2D(min_max2, trajectory2)
 
-settings3 = example3();
-min_max3, trajectory3 = run_dynamics(settings3)
-plot_trajectory2D(H(min_max3), H.(trajectory3))
+# settings3 = example3();
+# min_max3, trajectory3 = run_dynamics(settings3)
+# plot_trajectory2D(H(min_max3), H.(trajectory3))
 
 # settings4 = example4();
 # min_max4, trajectory4 = run_dynamics(settings4)
@@ -175,10 +152,10 @@ plot_trajectory2D(H(min_max3), H.(trajectory3))
 # min_max6, trajectory6 = run_dynamics(settings6)
 # plot_trajectory2D(H(min_max6), H.(trajectory6))
 
-# settings7 = example7();
-# min_max7, trajectory7 = run_dynamics(settings7)
-# plot_trajectory2D(H(min_max7), H.(trajectory7))
-ˇ
+settings7 = example7();
+min_max7, trajectory7 = run_dynamics(settings7)
+plot_trajectory2D(H(min_max7), H.(trajectory7))
+
 # settings8 = example8();
 # min_max8, trajectory8 = run_dynamics(settings8)
 # println(H(min_max8))
