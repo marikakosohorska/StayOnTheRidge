@@ -15,18 +15,24 @@ struct Settings
     ϵ
     V
     J
-    function Settings(f, x, n, min_coords, γ, ϵ, H, H_inverse, P)
-        V = prepare_V(f, x, min_coords, H, H_inverse, P)
-        J = prepare_J(V,x)
-        println(_eval_expr(V,Dict(x .=> [0,0])))
-        return new(f, x, n, min_coords, γ, ϵ, V, J)
-    end
-    function Settings(f, x, n, min_coords, γ, ϵ)
-        V = prepare_V(f, x, min_coords)
-        J = prepare_J(V, x)
-        return new(f, x, n, min_coords, γ, ϵ, V, J)
+    grad_f
+    hessian_f
+
+    function Settings(f_expr, x, n, min_coords, γ, ϵ; H = nothing)
+        f = eval(build_function(f_expr, x))
+        V_expr = isnothing(H) ? prepare_V(f_expr, x, min_coords) : prepare_V(f_expr, x, min_coords, H)
+        V = [eval(build_function(V_expr[i], x)) for i in 1:n]
+        J_expr = Symbolics.jacobian(V_expr, x)
+        J = [eval(build_function(J_expr[i,j], x)) for i in 1:n, j in 1:n]
+        grad_f_expr = Symbolics.gradient(f_expr, x)
+        grad_f = [eval(build_function(grad_f_expr[i], x)) for i in 1:n]
+        hessian_f_expr = Symbolics.jacobian(grad_f_expr, x)
+        hessian_f = [eval(build_function(hessian_f_expr[i,j], x)) for i in 1:n, j in 1:n]
+        return new(f, x, n, min_coords, γ, ϵ, V, J, grad_f, hessian_f)
     end
 end
+
+_eval_expr(expr, dict) = Symbolics.value.(Symbolics.substitute(expr, dict))
 
 function prepare_V(f, x, min_coords)
     V = Symbolics.gradient(f, x)
@@ -34,20 +40,14 @@ function prepare_V(f, x, min_coords)
     return V
 end
 
-function prepare_V(f, x, min_coords, H, H_inverse, P)
-    f_substituted = _eval_expr(f, Dict(x .=> H(x)))
-    V = Symbolics.gradient(f_substituted, x)
+function prepare_V(f, x, min_coords, H)
+    f_at_H = _eval_expr(f, Dict(x .=> H(x)))
+    V = Symbolics.gradient(f_at_H, x)
     V[min_coords] .*= -1
-    V = H_inverse(P(H(x) .+ V)) .- x
     return V
 end
 
-function prepare_J(V, x)
-    J = Symbolics.jacobian(V, x)
-    return J
-end
-
-_eval_expr(expr, dict) = Symbolics.value.(Symbolics.substitute(expr, dict))
+P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
 
 function compute_direction(point::Vector, i::Integer, S::Vector, s::Settings)
     d = zeros(s.n)
@@ -57,41 +57,33 @@ function compute_direction(point::Vector, i::Integer, S::Vector, s::Settings)
         return d
     end
 
-    d_nonzero_indices = vcat(S, [i])
-    #println("d_nonzero_indices $d_nonzero_indices")
-    jacobian_Si = s.J[S, d_nonzero_indices]
-    #println("jacobian_Si symbolics: $jacobian_Si")
-    jacobian_Si_at_point = _eval_expr(jacobian_Si, Dict(s.x .=> point))
-    #println("jacobian_Si_at_point: $jacobian_Si_at_x")
-    d_nonzero = nullspace(jacobian_Si_at_point)
-    #println("d_nonzero base: $d_nonzero")
+    d_nonzero_idxs = vcat(S, [i])
+    jacobian_Si = [s.J[i,j](point) for i in S, j in d_nonzero_idxs]
+    d_nonzero = nullspace(jacobian_Si)
     if size(d_nonzero, 2) != 1
-        error("Assumption 1 violated at i = $i, S = $S, x = $point, nullspace dimension is $(ndims(d_nonzero)), jacobian_Si_at_point = $jacobian_Si_at_point")
+        error("Assumption 1 violated at i = $i, S = $S, x = $point, nullspace dimension is $(ndims(d_nonzero)), jacobian_Si_at_point = $jacobian_Si")
     end
 
     d_nonzero = vec(d_nonzero)
-    decision_matrix = hcat(transpose(jacobian_Si_at_point), d_nonzero)
-    #println("decision_matrix $decision_matrix")
-    decision_determinant = det(decision_matrix)
-    #println("decision_determinant $decision_determinant")
-    if sign(decision_determinant) != (-1)^(length(S))
+    decision_mat = hcat(transpose(jacobian_Si), d_nonzero)
+    decision_det = det(decision_mat)
+    if sign(decision_det) != (-1)^(length(S))
         d_nonzero .*= -1
     end
 
-    d[d_nonzero_indices] = d_nonzero
-    #println("Direction is $d")
+    d[d_nonzero_idxs] = d_nonzero
     return d
 end
  
 function good_exit(point::Vector, i::Integer, s::Settings)
-    Vi = _eval_expr(s.V[i], Dict(s.x .=> point))
+    Vi = s.V[i](point)
     xi = point[i]
     zs = abs(Vi) <= s.ϵ
 
     return zs || (xi == 0 && Vi < s.ϵ) || (xi == 1 && Vi > -s.ϵ), zs
 end
 
-function bad_exit(point::Vector, i::Integer, S::Vector, direction::Vector, s::Settings)
+function bad_exit(point::Vector, i::Integer, S::Vector, direction::Vector)
     triggering_coords = vcat(S, [i])
     point_triggering = point[triggering_coords]
     direction_triggering = direction[triggering_coords]
@@ -109,7 +101,7 @@ function middling_exit(point::Vector, i::Integer, S::Vector, direction::Vector, 
     new_point = point + s.γ*direction
     triggering_coords = setdiff(1:i-1, S)
     point_triggering = point[triggering_coords]
-    V_triggering = _eval_expr(s.V[triggering_coords], Dict(s.x .=> new_point))
+    V_triggering = [s.V[tr](new_point) for tr in triggering_coords]
     for (j, (pt, Vt)) in enumerate(zip(point_triggering, V_triggering))
         if (pt == 0 && Vt > 0) || (pt == 1 && Vt < 0)
             return triggering_coords[j]
@@ -119,28 +111,35 @@ function middling_exit(point::Vector, i::Integer, S::Vector, direction::Vector, 
     return 0
 end
 
-P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
-
 function run_dynamics(s::Settings)
-    # init values
-    point = fill(0,s.n)
+    point = fill(0, s.n)
     i = 1
     S = Vector{Int}()
-    pts = []
+    pts = Vector{Vector{Float64}}()
 
+    m = 0
+    k = 0
     while i <= s.n
+        m += 1
+        k = 0
         println("starting epoch ($i, $S) at $point")
+
         while true
-            is_good_exit, is_zs = good_exit(P(point; x_min = 0, x_max = 1), i, s)
-                if is_good_exit
-                    if is_zs
-                        S = vcat(S,[i])
-                    end
-                    i += 1
-                    break
+            k += 1
+            proj = P(point)
+            direction_proj = compute_direction(proj, i, S, s)
+
+            is_good_exit, is_zs = good_exit(proj, i, s)
+            if is_good_exit
+                println("good exit at $point")
+                if is_zs
+                    S = vcat(S,[i])
                 end
-            direction = compute_direction(point, i, S, s)
-            j = bad_exit(P(point; x_min = 0, x_max = 1), i, S, direction,s)
+                i += 1
+                break
+            end
+
+            j = bad_exit(proj, i, S, direction_proj)
             if j != 0
                 println("bad exit at $point")
                 if j == i
@@ -151,26 +150,31 @@ function run_dynamics(s::Settings)
                 end
                 break
             end
-            j = middling_exit(P(point; x_min = 0, x_max = 1), i, S, direction,s)
+
+            j = middling_exit(proj, i, S, direction_proj, s)
             if j != 0
                 println("middling exit at $point")
-                S = vcat(S,[j])
+                S = vcat(S, [j])
                 break
             end
-            point = point + s.γ*direction
-            direction = compute_direction(point, i, S,s)
+            
+            direction = compute_direction(point, i, S, s)
+            point += s.γ*direction
             push!(pts, point)
         end
-        point = P(point; x_min = 0, x_max = 1)
+
+        point = P(point)
     end
 
-    return point, pts
+    return point, pts, m, k
 end
 
-function plot_trajectory2D(min_max::Vector, trajectory)
+function plot_trajectory2D(min_max::Vector, trajectory, min_bound, max_bound)
     x1_coords = [pt[1] for pt in trajectory]
     x2_coords = [pt[2] for pt in trajectory]
-    scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1, markershape=:auto)
+    scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1,
+        markershape=:auto, xlims = [min_bound-0.1, max_bound+0.1], ylims = [min_bound-0.1, max_bound+0.1])
     scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10)
 end
+
 end

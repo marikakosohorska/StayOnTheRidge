@@ -2,7 +2,7 @@
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "61e1f8b081503fe93e649d111edde2065078f4fe"
+project_hash = "9a178f90666fd4ab1a18b3a0f07af497ee5d42c9"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "5d2e21d7b0d8c22f67483ef95ebdc39c0e6b6003"
@@ -80,6 +80,12 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "d9a9701b899b30332bbcb3e1679c41cce81fb0e8"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.3.2"
 
 [[deps.Bijections]]
 git-tree-sha1 = "c9b163bd832e023571e86d0b90d9de92a9879088"
@@ -950,6 +956,10 @@ version = "0.5.4"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[[deps.Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+
 [[deps.Qt6Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Vulkan_Loader_jll", "Xorg_libSM_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_cursor_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "libinput_jll", "xkbcommon_jll"]
 git-tree-sha1 = "37b7bb7aabf9a085e0044307e1717436117f2b3b"
@@ -1197,7 +1207,7 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
     StatsFunsInverseFunctionsExt = "InverseFunctions"
 
 [[deps.StayOnTheRidge]]
-deps = ["ForwardDiff", "LaTeXStrings", "Latexify", "LinearAlgebra", "Plots", "Symbolics"]
+deps = ["ForwardDiff", "LinearAlgebra", "Plots", "Symbolics"]
 path = ".."
 uuid = "250d2a78-eb8c-4fdb-8c50-61bd39400985"
 version = "1.0.0-DEV"
