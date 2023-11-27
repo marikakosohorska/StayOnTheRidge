@@ -17,6 +17,7 @@ struct Settings
     J
     grad_f
     hessian_f
+    H
 
     function Settings(f_expr, x, n, min_coords, γ, ϵ; H = nothing)
         f = eval(build_function(f_expr, x))
@@ -28,7 +29,7 @@ struct Settings
         grad_f = [eval(build_function(grad_f_expr[i], x)) for i in 1:n]
         hessian_f_expr = Symbolics.jacobian(grad_f_expr, x)
         hessian_f = [eval(build_function(hessian_f_expr[i,j], x)) for i in 1:n, j in 1:n]
-        return new(f, x, n, min_coords, γ, ϵ, V, J, grad_f, hessian_f)
+        return new(f, x, n, min_coords, γ, ϵ, V, J, grad_f, hessian_f, H)
     end
 end
 

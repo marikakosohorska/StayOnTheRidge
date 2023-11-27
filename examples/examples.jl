@@ -26,7 +26,7 @@ function example1()
     f = (x[1]-1/2)*(x[2]-1/2)
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
-end
+end # ok
 
 # example 2 - normal form game expected utility function (2 players, 2 strategies)
 function example2()
@@ -39,7 +39,7 @@ function example2()
     f = A[1,1]*x[1]*x[2]+A[1,2]*x[1]*(1-x[2])+A[2,1]*(1-x[1])*x[2]+A[2,2]*(1-x[1])*(1-x[2])
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
-end
+end # ok
 
 # example 3 - function f2 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
 function example3()
@@ -54,7 +54,7 @@ function example3()
     H = H_closure(-1,1)
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     return s
-end
+end # ok
 
 function example4() # https://link.springer.com/article/10.1007/s10589-019-00141-6 example 5.3 i)
     n = 4
@@ -67,20 +67,20 @@ function example4() # https://link.springer.com/article/10.1007/s10589-019-00141
     f = p/q
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
-end
+end # ok
 
-# function example5() # https://link.springer.com/article/10.1007/s10589-019-00141-6 example 5.3 ii)
-#     n = 6
-#     x = [Symbolics.variable(:x,i) for i in 1:n]
-#     min_coords = [1,2,3]
-#     γ = 1e-6
-#     ϵ = 1e-1
-#     p = sum(x[i]+x[n+1-i] for i in 1:3) + x[1]^2*x[5]^2-x[4]^2*x[2]^2 + x[1]^2*x[6]^2-x[4]^2*x[3]^2 + x[2]^2*x[6]^2 - x[5]^2*x[3]^2
-#     q = x[1]^2 + x[5]^2 + x[3]*x[6] + 1
-#     f = p/q
-#     s = Settings(f, x, n, min_coords, γ, ϵ)
-#     return s
-# end
+function example5() # https://link.springer.com/article/10.1007/s10589-019-00141-6 example 5.3 ii)
+    n = 6
+    x = [Symbolics.variable(:x,i) for i in 1:n]
+    min_coords = [1,2,3]
+    γ = 1e-6
+    ϵ = 1e-1
+    p = sum(x[i]+x[n+1-i] for i in 1:3) + x[1]^2*x[5]^2-x[4]^2*x[2]^2 + x[1]^2*x[6]^2-x[4]^2*x[3]^2 + x[2]^2*x[6]^2 - x[5]^2*x[3]^2
+    q = x[1]^2 + x[5]^2 + x[3]*x[6] + 1
+    f = p/q
+    s = Settings(f, x, n, min_coords, γ, ϵ)
+    return s
+end # cycle, no saddle point
 
 function example6() # https://arxiv.org/pdf/2109.04178.pdf example 1
     n = 2
@@ -92,7 +92,7 @@ function example6() # https://arxiv.org/pdf/2109.04178.pdf example 1
     H = H_closure(-1,1)
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     return s
-end
+end # ok
 
 function example7() # f1 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
     n = 2
@@ -104,7 +104,7 @@ function example7() # f1 from https://proceedings.mlr.press/v195/daskalakis23b/d
     H = H_closure(-1,1)
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     return s
-end
+end # jiny vysledek
 
 function example8() # example 6.3 i) from https://arxiv.org/pdf/1809.01218.pdf
     n = 6
@@ -116,7 +116,7 @@ function example8() # example 6.3 i) from https://arxiv.org/pdf/1809.01218.pdf
     H = H_closure(-1,1)
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     return s
-end
+end # ok
 
 function example9() # example 6.3 ii) from https://arxiv.org/pdf/1809.01218.pdf
     n = 6
@@ -128,7 +128,7 @@ function example9() # example 6.3 ii) from https://arxiv.org/pdf/1809.01218.pdf
     H = H_closure(-1,1)
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     return s
-end
+end # jiny vysledek, ale v reseni gradient 0 a hessian indefinitni
 
 function example10() # example 6.2 i) from https://arxiv.org/pdf/1809.01218.pdf
     n = 4
@@ -139,7 +139,7 @@ function example10() # example 6.2 i) from https://arxiv.org/pdf/1809.01218.pdf
     f = (x[1] + x[2] + x[3] + x[4] + 1)^2 -4*(x[1]*x[2] + x[2]*x[3] + x[3]*x[4] + x[4] + x[1])
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
-end
+end # assumption 1 (and also 2) violated
 
 function example11() # function x1^2 - x2^2
     n = 2
@@ -151,7 +151,7 @@ function example11() # function x1^2 - x2^2
     H = H_closure(-1,1)
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     return s
-end
+end # ok
 
 function example12()
     n = 2
@@ -162,7 +162,7 @@ function example12()
     f = -x[1]^2/2 + (x[2]+1)^2/2
     s = Settings(f, x, n, min_coords, γ, ϵ)
     return s
-end
+end # cycle
 
 function example13() # example 5.1 from https://arxiv.org/pdf/2108.04698.pdf
     n = 2
@@ -177,7 +177,7 @@ function example13() # example 5.1 from https://arxiv.org/pdf/2108.04698.pdf
     s = Settings(f, x, n, min_coords, γ, ϵ; H)
     display(f)
     return s
-end
+end # jiny vysledek
 
 function format_elapsed(elapsed_seconds)
     if elapsed_seconds < 1e-6
@@ -209,8 +209,8 @@ plot_trajectory2D(min_max1, trajectory1, 0, 1)
 
 # settings3 = example3();
 # elapsed3 = @elapsed min_max3, trajectory3, m3, k3 = run_dynamics(settings3)
-# pretty_print(H(min_max3), elapsed3, m3, k3)
-# plot_trajectory2D(H(min_max3), H.(trajectory3), -1, 1)
+# pretty_print(settings3.H(min_max3), elapsed3, m3, k3)
+# plot_trajectory2D(settings3.H(min_max3), settings3.H.(trajectory3), -1, 1)
 
 # settings4 = example4();
 # elapsed4 = @elapsed min_max4, trajectory4, m4, k4 = run_dynamics(settings4)
@@ -219,28 +219,26 @@ plot_trajectory2D(min_max1, trajectory1, 0, 1)
 
 # settings5 = example5();
 # elapsed5 = @elapsed min_max5, trajectory5, m5, k5 = run_dynamics(settings5)
-# pretty_print(min_max5, elapsed5, m5, k5)
-# plot_trajectory2D(min_max5, trajectory5, 0, 1)
 
 # settings6 = example6();
 # elapsed6 = @elapsed min_max6, trajectory6, m6, k6 = run_dynamics(settings6)
-# pretty_print(H(min_max6), elapsed6, m6, k6)
-# plot_trajectory2D(H(min_max6), H.(trajectory6), -1, 1)
+# pretty_print(settings6.H(min_max6), elapsed6, m6, k6)
+# plot_trajectory2D(settings6.H(min_max6), settings6.H.(trajectory6), -1, 1)
 
 # settings7 = example7();
 # elapsed7 = @elapsed min_max7, trajectory7, m7, k7 = run_dynamics(settings7)
-# pretty_print(H(min_max7), elapsed7, m7, k7)
-# plot_trajectory2D(H(min_max7), H.(trajectory7), -1, 1)
+# pretty_print(settings7.H(min_max7), elapsed7, m7, k7)
+# plot_trajectory2D(settings7.H(min_max7), settings7.H.(trajectory7), -1, 1)
 
 # settings8 = example8();
 # elapsed8 = @elapsed min_max8, trajectory8, m8, k8 = run_dynamics(settings8)
-# pretty_print(H(min_max8), elapsed8, m8, k8)
+# pretty_print(settings8.H(min_max8), elapsed8, m8, k8)
 
 # settings9 = example9();
 # elapsed9 = @elapsed min_max9, trajectory9, m9, k9 = run_dynamics(settings9)
-# pretty_print(H(min_max9), elapsed9, m9, k9)
-# g = [settings9.grad_f[i](H(min_max9)) for i in 1:6]
-# h = [settings9.hessian_f[i,j](H(min_max9)) for i in 1:6, j in 1:6]
+# pretty_print(settings9.H(min_max9), elapsed9, m9, k9)
+# g = [settings9.grad_f[i](settings9.H(min_max9)) for i in 1:6]
+# h = [settings9.hessian_f[i,j](settings9.H(min_max9)) for i in 1:6, j in 1:6]
 # eigvals(h)
 
 # settings10 = example10();
@@ -248,14 +246,14 @@ plot_trajectory2D(min_max1, trajectory1, 0, 1)
 
 # settings11 = example11();
 # elapsed11 = @elapsed min_max11, trajectory11, m11, k11 = run_dynamics(settings11)
-# pretty_print(H(min_max11), elapsed11, m11, k11)
-# plot_trajectory2D(H(min_max11), H.(trajectory11), -1, 1)
+# pretty_print(settings11.H(min_max11), elapsed11, m11, k11)
+# plot_trajectory2D(settings11.H(min_max11), settings11.H.(trajectory11), -1, 1)
 
 # settings12 = example12();
 # elapsed12 = @elapsed min_max12, trajectory12, m12, k12 = run_dynamics(settings12)
 
 # settings13 = example13();
 # elapsed13 = @elapsed min_max13, trajectory13, m13, k13 = run_dynamics(settings13)
-# pretty_print(H(min_max13), elapsed13, m13, k13)
-# plot_trajectory2D(H(min_max13), H.(trajectory13), -1, 7)
+# pretty_print(settings13.H(min_max13), elapsed13, m13, k13)
+# plot_trajectory2D(settings13.H(min_max13), settings13.H.(trajectory13), -1, 7)
 
