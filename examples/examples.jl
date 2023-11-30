@@ -178,25 +178,7 @@ function example9(sym::Bool) # function x1^2 - x2^2
     end
 end
 
-function format_elapsed(elapsed_seconds)
-    if elapsed_seconds < 1e-6
-        return string(round(elapsed_seconds * 1e9, digits=3), " ns")
-    elseif elapsed_seconds < 1e-3
-        return string(round(elapsed_seconds * 1e6, digits=3), " μs")
-    elseif elapsed_seconds < 1
-        return string(round(elapsed_seconds * 1e3, digits=3), " ms")
-    else
-        return string(round(elapsed_seconds, digits=3), " s")
-    end
-end
-
-function pretty_print(point, time, m, k)
-    str_point = "($(join(round.(point, digits=4), ", ")))"
-    str_time = format_elapsed(time)
-    display("Min max critical point: $str_point, elapsed time: $str_time, outer cycles: $m, inner cycles: $k")
-end
-
-# settings1 = example1(false);
+# settings1 = example1(true);
 # elapsed1 = @elapsed min_max1, trajectory1, m1, k1 = run_dynamics(settings1)
 # pretty_print(min_max1, elapsed1, m1, k1)
 # plot_trajectory2D(min_max1, trajectory1, 0, 1)
@@ -206,17 +188,17 @@ end
 # pretty_print(min_max2, elapsed2, m2, k2)
 # plot_trajectory2D(min_max2, trajectory2, 0, 1)
 
-# settings3 = example3(false);
+# settings3 = example3(true);
 # elapsed3 = @elapsed min_max3, trajectory3, m3, k3 = run_dynamics(settings3)
 # pretty_print(settings3.H(min_max3), elapsed3, m3, k3)
 # plot_trajectory2D(settings3.H(min_max3), settings3.H.(trajectory3), -1, 1)
 
-# settings4 = example4(false);
+# settings4 = example4(true);
 # elapsed4 = @elapsed min_max4, trajectory4, m4, k4 = run_dynamics(settings4)
 # pretty_print(min_max4, elapsed4, m4, k4)
 # plot_trajectory2D(min_max4, trajectory4, 0, 1)
 
-settings5 = example5(false);
+settings5 = example5(true);
 elapsed5 = @elapsed min_max5, trajectory5, m5, k5 = run_dynamics(settings5)
 pretty_print(settings5.H(min_max5), elapsed5, m5, k5)
 plot_trajectory2D(settings5.H(min_max5), settings5.H.(trajectory5), -1, 1)
@@ -226,11 +208,11 @@ plot_trajectory2D(settings5.H(min_max5), settings5.H.(trajectory5), -1, 1)
 # pretty_print(settings6.H(min_max6), elapsed6, m6, k6)
 # plot_trajectory2D(settings6.H(min_max6), settings6.H.(trajectory6), -1, 1)
 
-# settings7 = example7(false);
+# settings7 = example7(true);
 # elapsed7 = @elapsed min_max7, trajectory7, m7, k7 = run_dynamics(settings7)
 # pretty_print(settings7.H(min_max7), elapsed7, m7, k7)
 
-# settings8 = example8(true);
+# settings8 = example8(false);
 # elapsed8 = @elapsed min_max8, trajectory8, m8, k8 = run_dynamics(settings8)
 # pretty_print(settings8.H(min_max8), elapsed8, m8, k8)
 

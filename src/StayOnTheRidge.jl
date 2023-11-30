@@ -1,11 +1,11 @@
 module StayOnTheRidge
 
-using Symbolics
 using LinearAlgebra
 using Plots
 using ForwardDiff
+using Symbolics
 
-export run_dynamics, Config_sym, Config_FD, plot_trajectory2D
+export run_dynamics, Config_sym, Config_FD, plot_trajectory2D, pretty_print, format_elapsed
 
 abstract type Config end
 
@@ -51,7 +51,7 @@ struct Config_FD <: Config
     end
 end
 
-_eval_expr(expr, dict) = Symbolics.value.(Symbolics.substitute(expr, dict))
+eval_expr(expr, dict) = Symbolics.value.(Symbolics.substitute(expr, dict))
 
 function prepare_V(f, x, min_coords)
     V = Symbolics.gradient(f, x)
@@ -60,7 +60,7 @@ function prepare_V(f, x, min_coords)
 end
 
 function prepare_V(f, x, min_coords, H)
-    f_at_H = _eval_expr(f, Dict(x .=> H(x)))
+    f_at_H = eval_expr(f, Dict(x .=> H(x)))
     V = Symbolics.gradient(f_at_H, x)
     V[min_coords] .*= -1
     return V
@@ -68,44 +68,28 @@ end
 
 P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
 
-function compute_direction(point, i, S, conf::Config_sym)
-    d = zeros(conf.n)
-
-    if isempty(S)
-        d[i] = 1
-        return d
-    end
-
-    d_nonzero_idxs = vcat(S, [i])
+function get_jacobian_Si(conf::Config_sym, point, d_nonzero_idxs, S)
     jacobian_Si = [conf.J[i,j](point) for i in S, j in d_nonzero_idxs]
-    d_nonzero = nullspace(jacobian_Si)
-    if size(d_nonzero, 2) != 1
-        error("Assumption 1 violated at i = $i, S = $S, x = $point, nullspace dimension is $(ndims(d_nonzero)), jacobian_Si_at_point = $jacobian_Si")
-    end
-
-    d_nonzero = vec(d_nonzero)
-    decision_mat = hcat(transpose(jacobian_Si), d_nonzero)
-    decision_det = det(decision_mat)
-    if sign(decision_det) != (-1)^(length(S))
-        d_nonzero .*= -1
-    end
-
-    d[d_nonzero_idxs] = d_nonzero
-    return d
+    return jacobian_Si
 end
 
-function compute_direction(point, i, S, conf::Config_FD)
-    d = zeros(conf.n)
-
-    if isempty(S)
-        d[i] = 1
-        return d
-    end
-
-    d_nonzero_idxs = vcat(S, [i])
+function get_jacobian_Si(conf::Config_FD, point, d_nonzero_idxs, S)
     jacobian = ForwardDiff.hessian(conf.f_obj, point)
     jacobian[conf.min_coords,:] .*= -1
     jacobian_Si = [jacobian[i,j] for i in S, j in d_nonzero_idxs]
+    return jacobian_Si
+end
+
+function compute_direction(point, i, S, conf::Config)
+    d = zeros(conf.n)
+
+    if isempty(S)
+        d[i] = 1
+        return d
+    end
+
+    d_nonzero_idxs = vcat(S, [i])
+    jacobian_Si = get_jacobian_Si(conf, point, d_nonzero_idxs, S)
     d_nonzero = nullspace(jacobian_Si)
     if size(d_nonzero, 2) != 1
         error("Assumption 1 violated at i = $i, S = $S, x = $point, nullspace dimension is $(ndims(d_nonzero)), jacobian_Si_at_point = $jacobian_Si")
@@ -122,22 +106,24 @@ function compute_direction(point, i, S, conf::Config_FD)
     return d
 end
 
-function compute_V(conf::Config_FD, point)
+function get_V(conf::Config_FD, point)
     V = ForwardDiff.gradient(conf.f_obj, point)
     V[conf.min_coords] .*= -1
     return V
 end
 
-function good_exit(point, i, conf::Config_sym)
+function get_Vi(conf::Config_sym, point, i)
     Vi = conf.V[i](point)
-    xi = point[i]
-    zs = abs(Vi) <= conf.ϵ
-
-    return zs || (xi == 0 && Vi < conf.ϵ) || (xi == 1 && Vi > -conf.ϵ), zs
+    return Vi
 end
 
-function good_exit(point, i, conf::Config_FD)
-    Vi = compute_V(conf, point)[i]
+function get_Vi(conf::Config_FD, point, i)
+    Vi = get_V(conf, point)[i]
+    return Vi
+end
+
+function good_exit(point, i, conf::Config)
+    Vi = get_Vi(conf, point, i)
     xi = point[i]
     zs = abs(Vi) <= conf.ϵ
 
@@ -145,65 +131,47 @@ function good_exit(point, i, conf::Config_FD)
 end
 
 function bad_exit(point, i, S, direction)
-    triggering_coords = vcat(S, [i])
-    point_triggering = point[triggering_coords]
-    direction_triggering = direction[triggering_coords]
+    tr_coords = vcat(S, [i])
+    point_tr = point[tr_coords]
+    direction_tr = direction[tr_coords]
 
-    for (j, (pt, dt)) in enumerate(zip(point_triggering, direction_triggering))
+    for (j, (pt, dt)) in enumerate(zip(point_tr, direction_tr))
         if (pt == 0 && dt < 0) || (pt == 1 && dt > 0)
-            return triggering_coords[j]
+            return tr_coords[j]
         end
     end
 
     return 0
 end
 
-function middling_exit(point, i, S, direction, conf::Config_sym)
+function get_V_tr(conf::Config_sym, new_point, tr_coords)
+    V_tr = [conf.V[tr](new_point) for tr in tr_coords]
+    return V_tr
+end
+
+function get_V_tr(conf::Config_FD, new_point, tr_coords)
+    V_tr = get_V(conf, new_point)[tr_coords]
+    return V_tr
+end
+
+function middling_exit(point, i, S, direction, conf::Config)
     new_point = point + conf.γ*direction
-    triggering_coords = setdiff(1:i-1, S)
-    point_triggering = point[triggering_coords]
-    V_triggering = [conf.V[tr](new_point) for tr in triggering_coords]
-    for (j, (pt, Vt)) in enumerate(zip(point_triggering, V_triggering))
+    tr_coords = setdiff(1:i-1, S)
+    point_tr = point[tr_coords]
+    V_tr = get_V_tr(conf, new_point, tr_coords)
+    for (j, (pt, Vt)) in enumerate(zip(point_tr, V_tr))
         if (pt == 0 && Vt > 0) || (pt == 1 && Vt < 0)
-            return triggering_coords[j]
+            return tr_coords[j]
         end
     end
 
     return 0
 end
 
-function middling_exit(point, i, S, direction, conf::Config_FD)
-    new_point = point + conf.γ*direction
-    triggering_coords = setdiff(1:i-1, S)
-    point_triggering = point[triggering_coords]
-    V_triggering = compute_V(conf, new_point)[triggering_coords]
-    for (j, (pt, Vt)) in enumerate(zip(point_triggering, V_triggering))
-        if (pt == 0 && Vt > 0) || (pt == 1 && Vt < 0)
-            return triggering_coords[j]
-        end
-    end
-
-    return 0
-end
-
-function is_solution(conf::Config_sym, point) # sufficient condition for solution to speed up code
+function is_solution(conf::Config, point) # sufficient condition for solution to speed up code
     α = 0.1
     for i in 1:conf.n
-        Vi = conf.V[i](point)
-        cond1 = Vi == 0
-        cond2 = Vi > 0 && 1 <= α/(conf.n*Vi)+point[i]
-        cond3 = Vi < 0 && 0 <= -α/(conf.n*Vi)-point[i]
-        if !cond1 && !cond2 && !cond3
-            return false
-        end
-    end
-    return true
-end
-
-function is_solution(conf::Config_FD, point) # sufficient condition to speed up the code
-    α = 0.1
-    for i in 1:conf.n
-        Vi = compute_V(conf, point)[i]
+        Vi = get_Vi(conf, point, i)
         cond1 = Vi == 0
         cond2 = Vi > 0 && 1 <= α/(conf.n*Vi)+point[i]
         cond3 = Vi < 0 && 0 <= -α/(conf.n*Vi)-point[i]
@@ -275,6 +243,24 @@ function plot_trajectory2D(min_max, trajectory, min_bound, max_bound)
     scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1,
         markershape=:auto, xlims = [min_bound-0.1, max_bound+0.1], ylims = [min_bound-0.1, max_bound+0.1])
     scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10)
+end
+
+function pretty_print(point, time, m, k)
+    str_point = "($(join(round.(point, digits=4), ", ")))"
+    str_time = format_elapsed(time)
+    display("Min max critical point: $str_point, elapsed time: $str_time, outer cycles: $m, inner cycles: $k")
+end
+
+function format_elapsed(elapsed_seconds)
+    if elapsed_seconds < 1e-6
+        return string(round(elapsed_seconds * 1e9, digits=3), " ns")
+    elseif elapsed_seconds < 1e-3
+        return string(round(elapsed_seconds * 1e6, digits=3), " μs")
+    elseif elapsed_seconds < 1
+        return string(round(elapsed_seconds * 1e3, digits=3), " ms")
+    else
+        return string(round(elapsed_seconds, digits=3), " s")
+    end
 end
 
 end
