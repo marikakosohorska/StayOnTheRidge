@@ -190,7 +190,7 @@ function run_dynamics(conf::Config)
     m = 0
     k = 0
 
-    while i <= conf.n && !is_solution(conf, point)
+    while i <= conf.n # && !is_solution(conf, point)
         k = 0
         println("starting epoch ($i, $S) at $point")
 

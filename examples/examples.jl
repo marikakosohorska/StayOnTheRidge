@@ -12,9 +12,6 @@ function H_closure(a, b)
     end
 end
 
-H_inverse(x; a = -1, b = 1) = (x .- a) ./ (b .- a)
-P(x; a = -1, b = 1) = min.(max.(x, a), b)
-
 # example 1 - example from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix D)
 function example1(sym::Bool)
     n = 2
