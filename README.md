@@ -13,7 +13,7 @@ The package is not registered and this can be installed in the following way
 ```
 
 ## Description
-The STON'R algorithm involves the computation of the gradient and hessian of the function. This implementation is able to switch between symbolic computation (using Symbolics.jl) and automatic differentiation (using ForwarDiff.jl package).
+The STON'R algorithm involves the computation of the gradient and hessian of the function. This implementation is able to switch between symbolic computation (using Symbolics.jl) and automatic differentiation (using ForwardDiff.jl package).
 
 ## Example
 ### Function 2x₁x₂² - x₁² - x₂ on the square [-1,1]²
