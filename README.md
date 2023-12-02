@@ -1,9 +1,9 @@
 # StayOnTheRidge.jl
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://gitlab.fel.cvut.cz/kosohmar/StayOnTheRidge.jl/-/blob/main/LICENSE)
 
-This package implements the STay-ON-the-Ridge algorithm, designed to find min-max critical points of nonconvex-nonconcave functions. Further details about the algorithm can be found in the associated paper at https://proceedings.mlr.press/v195/daskalakis23b.html.
+This package implements the STay-ON-the-Ridge algorithm (STON'R), designed to find min-max critical points of possibly nonconvex-nonconcave functions. The concepts of min-max critical points and the STON'R algorithm were proposed in https://proceedings.mlr.press/v195/daskalakis23b.html.
 
-This project, currently in progress, is being developed as part of a Bachelor's thesis at the Faculty of Electrical Engineering, Czech Technical University in Prague.
+This is a project in progress, developed as part of a Bachelor's thesis at the Faculty of Electrical Engineering, Czech Technical University in Prague.
 
 ## Instalation
 The package is not registered and this can be installed in the following way
@@ -13,11 +13,13 @@ The package is not registered and this can be installed in the following way
 ```
 
 ## Description
-STON'R algorithm needs to compute the gradient and hessian of the function. This implementation is able to switch between symbolic computation (for testing purposes) and computation using the ForwardDiff package (which will be used in the future for multidimensional functions).
+The STON'R algorithm involves the computation of the gradient and hessian of the function. This implementation is able to switch between symbolic computation (using Symbolics.jl) and automatic differentiation (using ForwarDiff.jl package).
 
 ## Example
-Example using ForwardDiff differentiation:
+### Function 2*x_1_*x_2^2-x_1^2-x_2 at the hypercube [-1,1]^2
+Since the algorithm operates on the unit hypercube [0,1]^n, we need to define function H mapping from [0,1]^n to the general hypercube [a,b]^n.
 
+Execution using ForwardDiff differentiation:
 ```julia
 using StayOnTheRidge
 
@@ -38,10 +40,18 @@ config = Config_FD(f, n, min_coords, γ, ϵ; H)
 elapsed = @elapsed min_max, trajectory, m, k = run_dynamics(config)
 pretty_print(config.H(min_max), elapsed, m, k)
 plot_trajectory2D(config.H(min_max), config.H.(trajectory), -1, 1)
+plot_contour2D(settings5.H(min_max5), settings5.f, -1, 1)
+plot_surface(settings5.H(min_max5), settings5.f, -1, 1)
 ```
 
 <p align="center">
-  <img src="imgs/trajectory_plot.png">
+  <img src="imgs/example5_trajectory.png">
+</p>
+<p align="center">
+  <img src="imgs/example5_contour.png">
+</p>
+<p align="center">
+  <img src="imgs/example5_surface.png">
 </p>
 
 For more examples see examples/examples.jl
