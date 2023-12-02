@@ -12,7 +12,9 @@ function H_closure(a, b)
     end
 end
 
-# example 1 - example from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix D)
+# Example 1 - example from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix D)
+# solution given by this implementation: (0.51, 0.49)
+# solution presented in the paper: (0.5, 0.5)
 function example1(sym::Bool)
     n = 2
     min_coords = [1]
@@ -28,7 +30,9 @@ function example1(sym::Bool)
     end
 end
 
-# example 2 - normal form game expected utility function (2 players, 2 strategies)
+# Example 2 - normal form game expected utility function (2 players, 2 strategies)
+# solution given by this implementation: (0.921, 0.921)
+# solution computed by linear programming: (0.92105, 0.92105)
 function example2(sym::Bool)
     n = 2
     min_coords = [1]
@@ -46,7 +50,9 @@ function example2(sym::Bool)
     return s
 end
 
-# example 3 - function f2 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
+# Example 3 - function f2 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
+# solution given by this implementation: (-0.004, -0.002)
+# solution presented in the paper: (0,0)
 function example3(sym::Bool)
     n = 2
     min_coords = [1]
@@ -76,7 +82,10 @@ function example3(sym::Bool)
     end
 end
 
-function example4(sym::Bool) # https://link.springer.com/article/10.1007/s10589-019-00141-6 example 5.3 i)
+# Example 4 - https://link.springer.com/article/10.1007/s10589-019-00141-6 example 5.3 i)
+# solution given by this implementation: (0,0,0,0)
+# solution presented in the paper: (0.2540,0.2097,0.2487,0.2944)*10^(-4)
+function example4(sym::Bool)
     n = 4
     min_coords = [1,2]
     γ = 1e-3
@@ -95,7 +104,10 @@ function example4(sym::Bool) # https://link.springer.com/article/10.1007/s10589-
     end
 end
 
-function example5(sym::Bool) # https://arxiv.org/pdf/2109.04178.pdf example 1
+# Example 5 - https://arxiv.org/pdf/2109.04178.pdf example 1
+# solution given by this implementation: (0.3967,0.6302)
+# solution presented in the paper: (0.4,0.6)
+function example5(sym::Bool)
     n = 2
     min_coords = [2]
     γ = 1e-4
@@ -111,7 +123,10 @@ function example5(sym::Bool) # https://arxiv.org/pdf/2109.04178.pdf example 1
     end
 end
 
-function example6(sym::Bool) # f1 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
+# Example 6 - f1 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
+# solution given by this implementation: (-1,-1)
+# solution presented in the paper: (0,0)
+function example6(sym::Bool)
     n = 2
     min_coords = [1]
     γ = 1e-4
@@ -127,7 +142,10 @@ function example6(sym::Bool) # f1 from https://proceedings.mlr.press/v195/daskal
     end
 end
 
-function example7(sym::Bool) # example 6.3 i) from https://arxiv.org/pdf/1809.01218.pdf
+# Example 7 - example 6.3 i) from https://arxiv.org/pdf/1809.01218.pdf
+# solution given by this implementation: (-1,-1,1,1,1,1)
+# solution presented in the paper: (-1,-1,1,1,1,1)
+function example7(sym::Bool)
     n = 6
     min_coords = [1,2,3]
     γ = 1e-4
@@ -143,7 +161,10 @@ function example7(sym::Bool) # example 6.3 i) from https://arxiv.org/pdf/1809.01
     end
 end
 
-function example8(sym::Bool) # example 6.3 ii) from https://arxiv.org/pdf/1809.01218.pdf
+# Example 8 - example 6.3 ii) from https://arxiv.org/pdf/1809.01218.pdf
+# solution given by this implementation: (0.0,-0.0141,-0.0142,-0.0107,-0.0177,-0.032)
+# solution presented in the paper: (-1,1,-1,-1,1,-1)
+function example8(sym::Bool)
     n = 6
     min_coords = [1,2,3]
     γ = 1e-4
@@ -159,7 +180,10 @@ function example8(sym::Bool) # example 6.3 ii) from https://arxiv.org/pdf/1809.0
     end
 end
 
-function example9(sym::Bool) # function x1^2 - x2^2
+# Example 9 - function x1^2 - x2^2
+# solution given by this implementation: (-0.024, -0.024)
+# well known solution: (0,0)
+function example9(sym::Bool)
     n = 2
     min_coords = [1]
     γ = 1e-3
@@ -175,46 +199,84 @@ function example9(sym::Bool) # function x1^2 - x2^2
     end
 end
 
-# settings1 = example1(true);
-# elapsed1 = @elapsed min_max1, trajectory1, m1, k1 = run_dynamics(settings1)
-# pretty_print(min_max1, elapsed1, m1, k1)
-# plot_trajectory2D(min_max1, trajectory1, 0, 1)
+# Example 10 - monkey saddle
+# solution given by this implementation: (-1,-1)
+# well known solution: (0,0)
+function example10(sym::Bool)
+    n = 2
+    min_coords = [1]
+    γ = 1e-3
+    ϵ = 1e-1
+    H = H_closure(-1,1)
+    if sym
+        x = [Symbolics.variable(:x,i) for i in 1:n]
+        f = x[1]^3 - 3*x[1]*x[2]^2
+        return Config_sym(f, x, n, min_coords, γ, ϵ; H)
+    else
+        f_fd(x) = x[1]^3 - 3*x[1]*x[2]^2
+        return Config_FD(f_fd, n, min_coords, γ, ϵ; H)
+    end
+end
 
-# settings2 = example2(false);
-# elapsed2 = @elapsed min_max2, trajectory2, m2, k2 = run_dynamics(settings2)
-# pretty_print(min_max2, elapsed2, m2, k2)
-# plot_trajectory2D(min_max2, trajectory2, 0, 1)
+settings1 = example1(false);
+elapsed1 = @elapsed min_max1, trajectory1, m1, k1 = run_dynamics(settings1)
+pretty_print(min_max1, elapsed1, m1, k1)
+plot_trajectory2D(min_max1, trajectory1, 0, 1)
+plot_contour2D(min_max1, settings1.f, 0, 1)
+plot_surface(min_max1, settings1.f, 0, 1)
 
-# settings3 = example3(true);
-# elapsed3 = @elapsed min_max3, trajectory3, m3, k3 = run_dynamics(settings3)
-# pretty_print(settings3.H(min_max3), elapsed3, m3, k3)
-# plot_trajectory2D(settings3.H(min_max3), settings3.H.(trajectory3), -1, 1)
+settings2 = example2(false);
+elapsed2 = @elapsed min_max2, trajectory2, m2, k2 = run_dynamics(settings2)
+pretty_print(min_max2, elapsed2, m2, k2)
+plot_trajectory2D(min_max2, trajectory2, 0, 1)
+plot_contour2D(min_max2, settings2.f, 0, 1)
+plot_surface(min_max2, settings2.f, 0, 1)
 
-# settings4 = example4(true);
-# elapsed4 = @elapsed min_max4, trajectory4, m4, k4 = run_dynamics(settings4)
-# pretty_print(min_max4, elapsed4, m4, k4)
-# plot_trajectory2D(min_max4, trajectory4, 0, 1)
+settings3 = example3(true);
+elapsed3 = @elapsed min_max3, trajectory3, m3, k3 = run_dynamics(settings3)
+pretty_print(settings3.H(min_max3), elapsed3, m3, k3)
+plot_trajectory2D(settings3.H(min_max3), settings3.H.(trajectory3), -1, 1)
+plot_contour2D(settings3.H(min_max3), settings3.f, -1, 1)
+plot_surface(settings3.H(min_max3), settings3.f, -1, 1)
+
+settings4 = example4(true);
+elapsed4 = @elapsed min_max4, trajectory4, m4, k4 = run_dynamics(settings4)
+pretty_print(min_max4, elapsed4, m4, k4)
+plot_trajectory2D(min_max4, trajectory4, 0, 1)
 
 settings5 = example5(true);
 elapsed5 = @elapsed min_max5, trajectory5, m5, k5 = run_dynamics(settings5)
 pretty_print(settings5.H(min_max5), elapsed5, m5, k5)
 plot_trajectory2D(settings5.H(min_max5), settings5.H.(trajectory5), -1, 1)
+plot_contour2D(settings5.H(min_max5), settings5.f, -1, 1)
+plot_surface(settings5.H(min_max5), settings5.f, -1, 1)
 
-# settings6 = example6(false);
-# elapsed6 = @elapsed min_max6, trajectory6, m6, k6 = run_dynamics(settings6)
-# pretty_print(settings6.H(min_max6), elapsed6, m6, k6)
-# plot_trajectory2D(settings6.H(min_max6), settings6.H.(trajectory6), -1, 1)
+settings6 = example6(false);
+elapsed6 = @elapsed min_max6, trajectory6, m6, k6 = run_dynamics(settings6)
+pretty_print(settings6.H(min_max6), elapsed6, m6, k6)
+plot_trajectory2D(settings6.H(min_max6), settings6.H.(trajectory6), -1, 1)
+plot_contour2D(settings6.H(min_max6), settings6.f, -1, 1)
+plot_surface(settings6.H(min_max6), settings6.f, -1, 1)
 
-# settings7 = example7(true);
-# elapsed7 = @elapsed min_max7, trajectory7, m7, k7 = run_dynamics(settings7)
-# pretty_print(settings7.H(min_max7), elapsed7, m7, k7)
+settings7 = example7(true);
+elapsed7 = @elapsed min_max7, trajectory7, m7, k7 = run_dynamics(settings7)
+pretty_print(settings7.H(min_max7), elapsed7, m7, k7)
 
-# settings8 = example8(false);
-# elapsed8 = @elapsed min_max8, trajectory8, m8, k8 = run_dynamics(settings8)
-# pretty_print(settings8.H(min_max8), elapsed8, m8, k8)
+settings8 = example8(true);
+elapsed8 = @elapsed min_max8, trajectory8, m8, k8 = run_dynamics(settings8)
+pretty_print(settings8.H(min_max8), elapsed8, m8, k8)
 
-# settings9 = example9(false);
-# elapsed9 = @elapsed min_max9, trajectory9, m9, k9 = run_dynamics(settings9)
-# pretty_print(settings9.H(min_max9), elapsed9, m9, k9)
-# plot_trajectory2D(settings9.H(min_max9), settings9.H.(trajectory9), -1, 1)
+settings9 = example9(true);
+elapsed9 = @elapsed min_max9, trajectory9, m9, k9 = run_dynamics(settings9)
+pretty_print(settings9.H(min_max9), elapsed9, m9, k9)
+plot_trajectory2D(settings9.H(min_max9), settings9.H.(trajectory9), -1, 1)
+plot_contour2D(settings9.H(min_max9), settings9.f, -1, 1)
+plot_surface(settings9.H(min_max9), settings9.f, -1, 1)
+
+settings10 = example10(true);
+elapsed10 = @elapsed min_max10, trajectory10, m10, k10 = run_dynamics(settings10)
+pretty_print(settings10.H(min_max10), elapsed10, m10, k10)
+plot_trajectory2D(settings10.H(min_max10), settings10.H.(trajectory10), -1, 1)
+plot_contour2D(settings10.H(min_max10), settings10.f, -1, 1)
+plot_surface(settings10.H(min_max10), settings10.f, -1, 1)
 
