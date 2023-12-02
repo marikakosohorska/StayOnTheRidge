@@ -16,7 +16,7 @@ The package is not registered and this can be installed in the following way
 The STON'R algorithm involves the computation of the gradient and hessian of the function. This implementation is able to switch between symbolic computation (using Symbolics.jl) and automatic differentiation (using ForwarDiff.jl package).
 
 ## Example
-### Function 2x₁x₂² - x₁² - x₂ on the hypercube [-1,1]²
+### Function 2x₁x₂² - x₁² - x₂ on the square [-1,1]²
 Since the algorithm operates on the unit hypercube [0,1]ⁿ, we need to define function H mapping from [0,1]ⁿ to the general hypercube [a,b]ⁿ.
 
 Execution using ForwardDiff differentiation:
@@ -40,8 +40,8 @@ config = Config_FD(f, n, min_coords, γ, ϵ; H)
 elapsed = @elapsed min_max, trajectory, m, k = run_dynamics(config)
 pretty_print(config.H(min_max), elapsed, m, k)
 plot_trajectory2D(config.H(min_max), config.H.(trajectory), -1, 1)
-plot_contour2D(settings5.H(min_max5), settings5.f, -1, 1)
-plot_surface(settings5.H(min_max5), settings5.f, -1, 1)
+plot_contour2D(config.H(min_max), config.f, -1, 1)
+plot_surface(config.H(min_max), config.f, -1, 1)
 ```
 
 <p align="center">
