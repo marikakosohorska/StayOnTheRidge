@@ -23,9 +23,10 @@ Execution using ForwardDiff differentiation:
 ```julia
 using StayOnTheRidge
 
-function H_closure(a, b) # extend domain to the general hypercube
+# general rectangle mapping
+function H_hyperrectangle(sides)
     function H(x)
-        return a .+ (b .- a) .* x
+        return getindex.(sides,1) .+ (getindex.(sides,2) .- getindex.(sides, 1)) .* x
     end
 end
 
@@ -33,15 +34,15 @@ n = 2 # number of variables
 min_coords = [2] # indices of minimizing coordinates
 γ = 1e-3 # step size
 ϵ = 1e-1 # precision
-H = H_closure(-1,1)
+H = H_hyperrectangle([[-1,1],[-1,1]])
 
 f(x) = 2*x[1]*x[2]^2-x[1]^2-x[2]
 config = Config_FD(f, n, min_coords, γ, ϵ; H)
 elapsed = @elapsed min_max, trajectory, m, k = run_dynamics(config)
 pretty_print(config.H(min_max), elapsed, m, k)
-plot_trajectory2D(config.H(min_max), config.H.(trajectory), -1, 1)
-plot_contour2D(config.H(min_max), config.f, -1, 1)
-plot_surface(config.H(min_max), config.f, -1, 1)
+plot_trajectory2D(config.H(min_max), config.H.(trajectory), [-1,1], [-1,1])
+plot_contour2D(config.H(min_max), config.f, [-1,1], [-1,1])
+plot_surface(config.H(min_max), config.f, [-1,1], [-1,1])
 ```
 
 <p align="center">
