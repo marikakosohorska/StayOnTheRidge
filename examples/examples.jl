@@ -96,7 +96,6 @@ end
 # Example 4 - https://link.springer.com/article/10.1007/s10589-019-00141-6 example 5.3 i)
 # solution given by this implementation: (0,0,0,0)
 # solution presented in the paper: (0.2540,0.2097,0.2487,0.2944)*10^(-4)
-# characterization: 
 function example4(sym::Bool)
     n = 4
     min_coords = [1,2]
@@ -140,7 +139,7 @@ end
 # Example 6 - f1 from https://proceedings.mlr.press/v195/daskalakis23b/daskalakis23b.pdf (Appendix E)
 # solution given by this implementation: (-1,-1)
 # solution presented in the paper: (0,0)
-# characterization:
+# characterization at [-1,1]²: neither convex in x₁ nor concave in x₂
 function example6(sym::Bool)
     n = 2
     min_coords = [1]
@@ -344,39 +343,6 @@ pretty_print(config3.H(min_max3), elapsed3, m3, k3)
 plot_trajectory2D(config3.H(min_max3), config3.H.(trajectory3), [-1,1], [-1,1])
 plot_contour2D(config3.H(min_max3), config3.f, [-1,1], [-1,1])
 plot_surface(config3.H(min_max3), config3.f, [-1,1], [-1,1])
-
-a=0
-b=0
-c=0
-d=0
-for i in 1:100
-    b = 0
-    for j in 1:100
-        c = 0
-        for k in 1:100
-            d = 0
-            for l in 1:100
-                print("l")
-                if config4.hessian_f[10]([a,b,c,d]) <= 0
-                    display("x")
-                    display(a)
-                    display("y")
-                    display(b)
-                end
-                d += 0.01
-            end
-            c += 0.01
-        end
-        b += 0.01
-    end
-    a += 0.01
-end
-
-config3.hessian_f[4]([0.74,-1])
-config6.hessian_f[1]([-0.997,0])
-
-config3.hessian_f[1]([0.994,-1])
-config3.hessian_f[4]([0.74,-1])
 
 config4 = example4(true);
 elapsed4 = @elapsed min_max4, trajectory4, m4, k4 = run_dynamics(config4)
