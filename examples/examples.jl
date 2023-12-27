@@ -187,7 +187,7 @@ function example8(sym::Bool)
     min_coords = [1,2,3]
     γ = 1e-4
     ϵ = 1e-1
-    H = H_hyperrectangle([[-1,1],[-1,1]])
+    H = H_hyperrectangle([fill([-1,1], 6)...])
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = x[1]^2 + x[2]^2 + x[3]^2 - x[4]^2 - x[5]^2 - x[6]^2 + x[1]*x[5] - x[2]*x[4] + x[1]*x[6] - x[3]*x[4] + x[2]*x[6] - x[3]*x[5]
