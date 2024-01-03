@@ -17,27 +17,20 @@ The STON'R algorithm involves the computation of the gradient and hessian of the
 
 ## Example
 ### Function $2x_1x_2^2 - x_1^2 - x_2$ on the square $\[-1,1\]^2$
-Since the algorithm operates on the unit hypercube $\[0,1\]^n$, we need to define function $H$ mapping from $\[0,1\]^n$ to the general hypercube $\[a,b\]^n$.
+The algorithm operates on the unit hypercube $\[0,1\]^n$. It can be extended to the general convex set by defining mapping $H$ from $\[0,1\]^n$ to the general convex set.
+The current implementation assumes a general hyperrectangle domain, passed to the config as the last argument.
 
 Execution using ForwardDiff differentiation:
 ```julia
 using StayOnTheRidge
 
-# general rectangle mapping
-function H_hyperrectangle(sides)
-    function H(x)
-        return getindex.(sides,1) .+ (getindex.(sides,2) .- getindex.(sides, 1)) .* x
-    end
-end
-
 n = 2 # number of variables
 min_coords = [2] # indices of minimizing coordinates
 γ = 1e-3 # step size
 ϵ = 1e-1 # precision
-H = H_hyperrectangle([[-1,1],[-1,1]])
 
 f(x) = 2*x[1]*x[2]^2-x[1]^2-x[2]
-config = Config_FD(f, n, min_coords, γ, ϵ; H)
+config = Config_FD(f, n, min_coords, γ, ϵ, [[-1,1],[-1,1]])
 elapsed = @elapsed min_max, trajectory, m, k = run_dynamics(config)
 pretty_print(config.H(min_max), elapsed, m, k)
 plot_trajectory2D(config.H(min_max), config.H.(trajectory), [-1,1], [-1,1])

@@ -9,7 +9,7 @@ function plot_trajectory2D(min_max, trajectory, fst_bounds, snd_bounds)
     x1_max_bound = fst_bounds[2] + fst
     x2_min_bound = snd_bounds[1] - snd
     x2_max_bound = snd_bounds[2] + snd
-    scatter(x1_coords, x2_coords; color=:blue, legend = false, markersize = 1,
+    scatter(x1_coords, x2_coords; color=:blue, aspect_ratio=:equal, legend = false, markersize = 1,
         markershape=:auto, xlims = [x1_min_bound, x1_max_bound], ylims = [x2_min_bound, x2_max_bound])
     scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10, color=:blue)
     title!("Trajectory")
@@ -19,7 +19,13 @@ function plot_contour2D(min_max, f, fst_bounds, snd_bounds)
     f_plot(x,y) = f([x,y])
     x1 = range(fst_bounds[1], fst_bounds[2], length=300)
     x2 = range(snd_bounds[1], snd_bounds[2], length=300)
-    contourf(x1, x2, f_plot, levels=50)
+    fst = abs(fst_bounds[1]-fst_bounds[2])/20
+    snd = abs(snd_bounds[1]-snd_bounds[2])/20
+    x1_min_bound = fst_bounds[1] - fst
+    x1_max_bound = fst_bounds[2] + fst
+    x2_min_bound = snd_bounds[1] - snd
+    x2_max_bound = snd_bounds[2] + snd
+    contourf(x1, x2, f_plot, levels=50, aspect_ratio=:equal, xlims = [x1_min_bound, x1_max_bound], ylims = [x2_min_bound, x2_max_bound])
     scatter!([min_max[1]], [min_max[2]], markershape=:star, markersize=10, legend=false, color=:blue)
     title!("Contour plot of the function")
 end
@@ -33,13 +39,6 @@ function plot_surface(min_max, f, fst_bounds, snd_bounds)
     scatter!([min_max[1]], [min_max[2]], [f(min_max)], markershape=:star, markersize=10, legend=false, color=:blue)
     title!("3D plot of the function")
 end
-
-# function plot_function(min_max, min_bound, max_bound, f)
-#     p1 = plot_contour2D(min_max, min_bound, max_bound, f)
-#     p2 = plot_surface(min_max, min_bound, max_bound, f)
-#     l = @layout [a{0.5w} ; b]
-#     plot(p1, p2, layout=l)
-# end
 
 function pretty_print(point, time, m, k)
     str_point = "($(join(round.(point, digits=4), ", ")))"
