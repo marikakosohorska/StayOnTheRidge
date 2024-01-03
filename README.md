@@ -17,7 +17,7 @@ The STON'R algorithm involves the computation of the gradient and hessian of the
 
 ## Example
 ### Function $2x_1x_2^2 - x_1^2 - x_2$ on the square $\[-1,1\]^2$
-The algorithm operates on the unit hypercube $\[0,1\]^n$. It can be extended to the general convex set by defining mapping $H$ from $\[0,1\]^n$ to the general convex set.
+The algorithm operates on the unit hypercube $\[0,1\]^n$. The domain can be extended to the general convex set $K$ by defining mapping $H$ from $\[0,1\]^n$ to $K$.
 The current implementation assumes a general hyperrectangle domain, passed to the config as the last argument.
 
 Execution using ForwardDiff differentiation:
