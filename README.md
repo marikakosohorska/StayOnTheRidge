@@ -9,7 +9,7 @@ This is a project in progress, developed as part of a Bachelor's thesis at the F
 The package is not registered and this can be installed in the following way
 
 ```julia
-(@v1.9) pkg> add https://gitlab.fel.cvut.cz/kosohmar/StayOnTheRidge.jl
+(@v1.9) pkg> add git@github.com:B0B36JUL-FinalProjects-2023/Projekt_Kosohorska.git
 ```
 
 ## Description
