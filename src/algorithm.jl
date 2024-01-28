@@ -2,69 +2,126 @@ using LinearAlgebra
 using ForwardDiff
 using Symbolics
 
-# general rectangle mapping
-function H_hyperrectangle(sides)
-    function H(x)
-        return getindex.(sides,1) .+ (getindex.(sides,2) .- getindex.(sides, 1)) .* x
+abstract type Domain end
+
+struct Hyperrectangle <: Domain
+    sides
+    function Hyperrectangle(sides)
+        return new(sides)
     end
+end
+
+# general hyperrectangle mapping
+function H(domain::Hyperrectangle)
+    sides = domain.sides
+    return x -> getindex.(sides,1) .+ (getindex.(sides,2) .- getindex.(sides,1)) .* x
 end
 
 abstract type Config end
 
+struct Config_FD <: Config
+    f::Function
+    f_obj::Function
+    n::Integer
+    min_coords
+    γ
+    ϵ
+    domain
+
+    function Config_FD(f, n, min_coords, γ, ϵ; domain = nothing)
+        if domain === nothing # default [0,1]ⁿ
+            domain = Hyperrectangle([fill([0,1], n)...])
+            f_obj = f
+        else
+            inner = H(domain) # closure to gain performance
+            f_obj = x -> f(inner(x))
+        end
+        return new(f, f_obj, n, min_coords, γ, ϵ, domain)
+    end
+end
+
+"""
+Config_sym
+
+A structure to demonstrate how to write docstrings in Julia.
+
+# Fields
+- `a::Int`: An integer field.
+- `b::Float64`: A floating-point field.
+"""
 struct Config_sym <: Config
     f
+    V # modified gradient of f
+    J # modified Jacobian matrix of V
     x
     n
     min_coords
     γ
     ϵ
-    V
-    J
-    grad_f
-    hessian_f
-    H
+    domain
 
-    function Config_sym(f_expr, x, n, min_coords, γ, ϵ, domain)
+    # for testing
+    grad_f
+    hess_mat_f
+
+    function Config_sym(f_expr, x, n, min_coords, γ, ϵ; domain = nothing)
+        if domain === nothing
+            domain = Hyperrectangle([fill([0,1], n)...])
+        end
         f = eval(build_function(f_expr, x))
-        H = H_hyperrectangle(domain)
-        V_expr = prepare_V(f_expr, x, min_coords, H)
+        V_expr = prepare_V(f_expr, x, min_coords, domain)
         V = [eval(build_function(V_expr[i], x)) for i in 1:n]
         J_expr = Symbolics.jacobian(V_expr, x)
         J = [eval(build_function(J_expr[i,j], x)) for i in 1:n, j in 1:n]
         grad_f_expr = Symbolics.gradient(f_expr, x)
         grad_f = [eval(build_function(grad_f_expr[i], x)) for i in 1:n]
-        hessian_f_expr = Symbolics.jacobian(grad_f_expr, x)
-        hessian_f = [eval(build_function(hessian_f_expr[i,j], x)) for i in 1:n, j in 1:n]
-        return new(f, x, n, min_coords, γ, ϵ, V, J, grad_f, hessian_f, H)
-    end
-end
-
-struct Config_FD <: Config
-    f
-    n
-    min_coords
-    γ
-    ϵ
-    H
-    f_obj
-
-    function Config_FD(f, n, min_coords, γ, ϵ, domain)
-        H = H_hyperrectangle(domain)
-        f_obj = x -> f(H(x))
-        return new(f, n, min_coords,  γ, ϵ, H, f_obj)
+        hess_mat_f_expr = Symbolics.jacobian(grad_f_expr, x)
+        hess_mat_f = [eval(build_function(hess_mat_f_expr[i,j], x)) for i in 1:n, j in 1:n]
+        return new(f, V, J, x, n, min_coords, γ, ϵ, domain, grad_f, hess_mat_f)
     end
 end
 
 eval_expr(expr, dict) = Symbolics.value.(Symbolics.substitute(expr, dict))
 
-function prepare_V(f, x, min_coords, H)
-    f_at_H = eval_expr(f, Dict(x .=> H(x)))
-    V = Symbolics.gradient(f_at_H, x)
+function prepare_V(f, x, min_coords, domain)
+    f_obj = eval_expr(f, Dict(x .=> H(domain)(x)))
+    V = Symbolics.gradient(f_obj, x)
     V[min_coords] .*= -1
     return V
 end
 
 P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
+
+function get_V(conf::Config_sym, point)
+    V = [conf.V[i](point) for i in 1:conf.n]
+    return V
+end
+
+function get_V(conf::Config_FD, point)
+    V = ForwardDiff.gradient(conf.f_obj, point)
+    V[conf.min_coords] .*= -1
+    return V
+end
+
+function get_Vi(conf::Config_sym, point, i)
+    Vi = conf.V[i](point)
+    return Vi
+end
+
+function get_Vi(conf::Config_FD, point, i)
+    Vi = get_V(conf, point)[i]
+    return Vi
+end
+
+function get_V_tr(conf::Config_sym, new_point, tr_coords)
+    V_tr = [conf.V[tr](new_point) for tr in tr_coords]
+    return V_tr
+end
+
+function get_V_tr(conf::Config_FD, new_point, tr_coords)
+    V_tr = get_V(conf, new_point)[tr_coords]
+    return V_tr
+end
 
 function get_jacobian_Si(conf::Config_sym, point, d_nonzero_idxs, S)
     jacobian_Si = [conf.J[i,j](point) for i in S, j in d_nonzero_idxs]
@@ -105,27 +162,6 @@ function compute_direction(point, i, S, conf::Config)
     return d
 end
 
-function get_V(conf::Config_sym, point)
-    V = [conf.V[i](point) for i in 1:conf.n]
-    return V
-end
-
-function get_V(conf::Config_FD, point)
-    V = ForwardDiff.gradient(conf.f_obj, point)
-    V[conf.min_coords] .*= -1
-    return V
-end
-
-function get_Vi(conf::Config_sym, point, i)
-    Vi = conf.V[i](point)
-    return Vi
-end
-
-function get_Vi(conf::Config_FD, point, i)
-    Vi = get_V(conf, point)[i]
-    return Vi
-end
-
 function good_exit(point, i, conf::Config)
     Vi = get_Vi(conf, point, i)
     xi = point[i]
@@ -148,16 +184,6 @@ function bad_exit(point, i, S, direction)
     return 0
 end
 
-function get_V_tr(conf::Config_sym, new_point, tr_coords)
-    V_tr = [conf.V[tr](new_point) for tr in tr_coords]
-    return V_tr
-end
-
-function get_V_tr(conf::Config_FD, new_point, tr_coords)
-    V_tr = get_V(conf, new_point)[tr_coords]
-    return V_tr
-end
-
 function middling_exit(point, i, S, direction, conf::Config)
     new_point = point + conf.γ*direction
     tr_coords = setdiff(1:i-1, S)
@@ -172,29 +198,19 @@ function middling_exit(point, i, S, direction, conf::Config)
     return 0
 end
 
-# TODO: need to examine how it works in discrete dynamics
-# function assump2violated(point, i, S, conf::Config)
-#     # only one coordinate can trigger middling or bad event
-#     tr_coords = vcat(S, [i])
-#     tr_point = point[tr_coords]
-#     count_zeros = count(x -> x < conf.ϵ, tr_point)
-#     count_ones = count(x -> x > 1 - conf.ϵ, tr_point)
-#     return count_zeros + count_ones > 1
-# end
-
 # sufficient condition for solution to speed up code
-function is_solution(conf::Config, point; α = 0.1)
-    for i in 1:conf.n
-        Vi = get_Vi(conf, point, i)
-        cond1 = Vi == 0
-        cond2 = Vi > 0 && 1 <= α/(conf.n*Vi)+point[i]
-        cond3 = Vi < 0 && 0 <= -α/(conf.n*Vi)-point[i]
-        if !cond1 && !cond2 && !cond3
-            return false
-        end
-    end
-    return true
-end
+# function is_solution(conf::Config, point; α = 0.1)
+#     for i in 1:conf.n
+#         Vi = get_Vi(conf, point, i)
+#         cond1 = Vi == 0
+#         cond2 = Vi > 0 && 1 <= α/(conf.n*Vi)+point[i]
+#         cond3 = Vi < 0 && 0 <= -α/(conf.n*Vi)-point[i]
+#         if !cond1 && !cond2 && !cond3
+#             return false
+#         end
+#     end
+#     return true
+# end
 
 # check if point satisfies the variational inequality
 function is_solution_VI(point, conf::Config; α = 0.1)
@@ -277,16 +293,11 @@ function run_dynamics(conf::Config)
             point += conf.γ*direction
             point = P(point)
 
-            # if assump2violated(point,i,S)
-            #     @warn "Assumption 2 violated at i = $i, S = $S, x = $point"
-            # end
-
             k += 1
             push!(pts, point)
         end
 
         m += 1
     end
-
-    return point, pts, m, k
+    return H(conf.domain)(point), map(x->H(conf.domain)(x),pts), m, k
 end
