@@ -5,14 +5,6 @@ using Symbolics
 include("domain.jl")
 include("config.jl")
 
-# TODO
-# typy
-# nejaky asserty configu a kontroly
-# dat to do testu
-# docstringy ke configum
-# predelat readme
-# napsat mail s tim ze s closure je to rychlejsi
-
 P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
 
 function get_V(conf::Config_sym, point)
