@@ -2,93 +2,16 @@ using LinearAlgebra
 using ForwardDiff
 using Symbolics
 
-abstract type Domain end
+include("domain.jl")
+include("config.jl")
 
-struct Hyperrectangle <: Domain
-    sides
-    function Hyperrectangle(sides)
-        return new(sides)
-    end
-end
-
-# general hyperrectangle mapping
-function H(domain::Hyperrectangle)
-    sides = domain.sides
-    return x -> getindex.(sides,1) .+ (getindex.(sides,2) .- getindex.(sides,1)) .* x
-end
-
-abstract type Config end
-
-struct Config_FD <: Config
-    f::Function
-    f_obj::Function
-    n::Integer
-    min_coords
-    γ
-    ϵ
-    domain
-
-    function Config_FD(f, n, min_coords, γ, ϵ; domain = nothing)
-        if domain === nothing # default [0,1]ⁿ
-            domain = Hyperrectangle([fill([0,1], n)...])
-            f_obj = f
-        else
-            inner = H(domain) # closure to gain performance
-            f_obj = x -> f(inner(x))
-        end
-        return new(f, f_obj, n, min_coords, γ, ϵ, domain)
-    end
-end
-
-"""
-Config_sym
-
-A structure to demonstrate how to write docstrings in Julia.
-
-# Fields
-- `a::Int`: An integer field.
-- `b::Float64`: A floating-point field.
-"""
-struct Config_sym <: Config
-    f
-    V # modified gradient of f
-    J # modified Jacobian matrix of V
-    x
-    n
-    min_coords
-    γ
-    ϵ
-    domain
-
-    # for testing
-    grad_f
-    hess_mat_f
-
-    function Config_sym(f_expr, x, n, min_coords, γ, ϵ; domain = nothing)
-        if domain === nothing
-            domain = Hyperrectangle([fill([0,1], n)...])
-        end
-        f = eval(build_function(f_expr, x))
-        V_expr = prepare_V(f_expr, x, min_coords, domain)
-        V = [eval(build_function(V_expr[i], x)) for i in 1:n]
-        J_expr = Symbolics.jacobian(V_expr, x)
-        J = [eval(build_function(J_expr[i,j], x)) for i in 1:n, j in 1:n]
-        grad_f_expr = Symbolics.gradient(f_expr, x)
-        grad_f = [eval(build_function(grad_f_expr[i], x)) for i in 1:n]
-        hess_mat_f_expr = Symbolics.jacobian(grad_f_expr, x)
-        hess_mat_f = [eval(build_function(hess_mat_f_expr[i,j], x)) for i in 1:n, j in 1:n]
-        return new(f, V, J, x, n, min_coords, γ, ϵ, domain, grad_f, hess_mat_f)
-    end
-end
-
-eval_expr(expr, dict) = Symbolics.value.(Symbolics.substitute(expr, dict))
-
-function prepare_V(f, x, min_coords, domain)
-    f_obj = eval_expr(f, Dict(x .=> H(domain)(x)))
-    V = Symbolics.gradient(f_obj, x)
-    V[min_coords] .*= -1
-    return V
-end
+# TODO
+# typy
+# nejaky asserty configu a kontroly
+# dat to do testu
+# docstringy ke configum
+# predelat readme
+# napsat mail s tim ze s closure je to rychlejsi
 
 P(x; x_min = 0, x_max = 1) = min.(max.(x, x_min), x_max)
 
@@ -227,7 +150,7 @@ run_dynamics(conf::Config)
 Executes STON'R dynamics with a given configuration conf.
 
 # Arguments
-- `conf::Config`: Specifies function, number of variables, minimizing coordinates, γ, and ϵ.
+- `conf::Config` : See `config_FD`, `Config_sym`.
 
 # Output
 - `point`: The min-max critical point.
@@ -243,8 +166,9 @@ julia> min_coords = [1]
 julia> γ = 1e-3
 julia> ϵ = 1e-2
 julia> f_fd(x) = -2*x[1]*x[2]^2+x[1]^2+x[2]
-julia> conf = Config_FD(f_fd, n, min_coords, γ, ϵ, [[-1,1],[-1,1]])
-julia> run_dynamics(conf)
+julia> domain = Hyperrectangle([[-1,1],[-1,1]])
+julia> conf = Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
+julia> min_max, trajectory, m, k = run_dynamics(conf)
 ```
 """
 function run_dynamics(conf::Config)
@@ -299,5 +223,6 @@ function run_dynamics(conf::Config)
 
         m += 1
     end
-    return H(conf.domain)(point), map(x->H(conf.domain)(x),pts), m, k
+    return conf.domain isa Default ? (point, pts, m, k) :
+        (H(conf.domain)(point), map(x->H(conf.domain)(x),pts), m, k)
 end

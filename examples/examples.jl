@@ -13,13 +13,14 @@ function example1(sym::Bool)
     min_coords = [1]
     γ = 1e-2
     ϵ = 1e-2
+    domain = Default()
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = (x[1]-1/2)*(x[2]-1/2)
-        return Config_sym(f, x, n, min_coords, γ, ϵ)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = (x[1]-1/2)*(x[2]-1/2)
-        return Config_FD(f_fd, n, min_coords, γ, ϵ)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -34,13 +35,14 @@ function example2(sym::Bool)
     γ = 1e-3
     ϵ = 1e-2
     A = [4 -5; -5 100]
+    domain = Default()
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = A[1,1]*x[1]*x[2]+A[1,2]*x[1]*(1-x[2])+A[2,1]*(1-x[1])*x[2]+A[2,2]*(1-x[1])*(1-x[2])
-        return Config_sym(f, x, n, min_coords, γ, ϵ)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = A[1,1]*x[1]*x[2]+A[1,2]*x[1]*(1-x[2])+A[2,1]*(1-x[1])*x[2]+A[2,2]*(1-x[1])*(1-x[2])
-        return Config_FD(f_fd, n, min_coords, γ, ϵ)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -60,7 +62,7 @@ function example3(sym::Bool)
         f = ifelse((x[1]^2 + x[2]^2)/2 <= 0, -x[1]*x[2] - 1/20*x[2]^2,
         ifelse((x[1]^2 + x[2]^2)/2 < 1, -x[1]*x[2] - 1/20*x[2]^2 + 2/20*(3*((x[1]^2 + x[2]^2)/2)^2 - 2*((x[1]^2 + x[2]^2)/2)^3)*x[2]^2,
             -x[1]*x[2] - 1/20*x[2]^2 + 2/20*x[2]^2))
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         function f_fd(x)
             term1 = -x[1] * x[2] - 1/20 * x[2]^2
@@ -74,7 +76,7 @@ function example3(sym::Bool)
                 return term3
             end
         end
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -92,12 +94,12 @@ function example4(sym::Bool)
         p = x[1]^2+x[2]^2-x[3]^2-x[4]^2
         q = x[1]+x[4]+1
         f = p/q
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         p_fd(x) = x[1]^2+x[2]^2-x[3]^2-x[4]^2
         q_fd(x) = x[1]+x[4]+1
         f_fd(x) = p_fd(x)/q_fd(x)
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -115,10 +117,10 @@ function example5(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = -2*x[1]*x[2]^2+x[1]^2+x[2]
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = -2*x[1]*x[2]^2+x[1]^2+x[2]
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -135,10 +137,10 @@ function example6(sym::Bool)
     if sym
         x = [Symbolics.variable(:x, i) for i in 1:n]
         f = (4*x[1]^2-(x[2]-3*x[1]+x[1]^3/20)^2-x[2]^4/10) * exp(-(x[1]^2+x[2]^2)/100)
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = (4*x[1]^2-(x[2]-3*x[1]+x[1]^3/20)^2-x[2]^4/10) * exp(-(x[1]^2+x[2]^2)/100)
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -156,10 +158,10 @@ function example7(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = sum(x[i]+x[3+i] for i in 1:3) - prod((x[i] - x[3+i]) for i in 1:3)
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = sum(x[i]+x[3+i] for i in 1:3) - prod((x[i] - x[3+i]) for i in 1:3)
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -177,10 +179,10 @@ function example8(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = x[1]^2 + x[2]^2 + x[3]^2 - x[4]^2 - x[5]^2 - x[6]^2 + x[1]*x[5] - x[2]*x[4] + x[1]*x[6] - x[3]*x[4] + x[2]*x[6] - x[3]*x[5]
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = x[1]^2 + x[2]^2 + x[3]^2 - x[4]^2 - x[5]^2 - x[6]^2 + x[1]*x[5] - x[2]*x[4] + x[1]*x[6] - x[3]*x[4] + x[2]*x[6] - x[3]*x[5]
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -198,10 +200,10 @@ function example9(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = x[1]^2 - x[2]^2
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = x[1]^2 - x[2]^2
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -219,10 +221,10 @@ function example10(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = x[1]^3 - 3*x[1]*x[2]^2
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = x[1]^3 - 3*x[1]*x[2]^2
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -236,14 +238,15 @@ function example11(sym::Bool)
     min_coords = [1]
     γ = 1e-4
     ϵ = 1e-4
+    display(typeof([[-1,1],[-2*pi,2*pi]]))
     domain = Hyperrectangle([[-1,1],[-2*pi,2*pi]])
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = 0.2*x[1]*x[2]-cos(x[2])
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = 0.2*x[1]*x[2]-cos(x[2])
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -261,10 +264,10 @@ function example12(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = x[1]^3+2*x[1]*x[2]-x[2]^2
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = x[1]^3+2*x[1]*x[2]-x[2]^2
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -278,13 +281,14 @@ function example13(sym::Bool)
     min_coords = [1]
     γ = 1e-3
     ϵ = 1e-2
+    domain = Default()
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = (x[1]-0.5)*(x[2]-0.5)+1/3*exp(-(x[1]-1/4)^2-(x[2]-3/4)^2)
-        return Config_sym(f, x, n, min_coords, γ, ϵ)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = (x[1]-0.5)*(x[2]-0.5)+1/3*exp(-(x[1]-1/4)^2-(x[2]-3/4)^2)
-        return Config_FD(f_fd, n, min_coords, γ, ϵ)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -302,10 +306,10 @@ function example14(sym::Bool)
     if sym
         x = [Symbolics.variable(:x,i) for i in 1:n]
         f = (x[1]^4*x[2]^2+x[1]^2+1)*(x[1]^2*x[2]^4-x[2]^2+1)
-        return Config_sym(f, x, n, min_coords, γ, ϵ; domain)
+        return Config_sym(f, x, n, min_coords, γ, ϵ, domain)
     else
         f_fd(x) = (x[1]^4*x[2]^2+x[1]^2+1)*(x[1]^2*x[2]^4-x[2]^2+1)
-        return Config_FD(f_fd, n, min_coords, γ, ϵ; domain)
+        return Config_FD(f_fd, n, min_coords, γ, ϵ, domain)
     end
 end
 
@@ -323,7 +327,7 @@ plot_trajectory2D(min_max2, trajectory2, config2.domain)
 plot_contour2D(min_max2, config2.f, config2.domain)
 plot_surface(min_max2, config2.f, config2.domain)
 
-config3 = example3(true);
+config3 = example3(false);
 elapsed3 = @elapsed min_max3, trajectory3, m3, k3 = run_dynamics(config3)
 pretty_print(min_max3, elapsed3, m3, k3)
 plot_trajectory2D(min_max3, trajectory3, config3.domain)
@@ -334,7 +338,7 @@ config4 = example4(false);
 elapsed4 = @elapsed min_max4, trajectory4, m4, k4 = run_dynamics(config4)
 pretty_print(min_max4, elapsed4, m4, k4)
 
-config5 = example5(true);
+config5 = example5(false);
 elapsed5 = @elapsed min_max5, trajectory5, m5, k5 = run_dynamics(config5)
 pretty_print(min_max5, elapsed5, m5, k5)
 plot_trajectory2D(min_max5, trajectory5, config5.domain)
@@ -370,7 +374,7 @@ plot_trajectory2D(min_max10, trajectory10, config10.domain)
 plot_contour2D(min_max10, config10.f, config10.domain)
 plot_surface(min_max10, config10.f, config10.domain)
 
-config11 = example11(false);
+config11 = example11(true);
 elapsed11 = @elapsed min_max11, trajectory11, m11, k11 = run_dynamics(config11)
 pretty_print(min_max11, elapsed11, m11, k11)
 plot_trajectory2D(min_max11, trajectory11, config11.domain)

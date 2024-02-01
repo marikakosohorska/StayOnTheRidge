@@ -18,24 +18,27 @@ The STON'R algorithm involves the computation of the gradient and hessian of the
 ## Example
 ### Function $2x_1x_2^2 - x_1^2 - x_2$ on the square $\[-1,1\]^2$
 The algorithm operates on the unit hypercube $\[0,1\]^n$. The domain can be extended to the general convex set $K$ by defining mapping $H$ from $\[0,1\]^n$ to $K$.
-The current implementation assumes a general hyperrectangle domain, passed to the config as the last argument.
+The current implementation is able to operate on $\[0,1\]^n$ or the general hyperrectangle.
+
+To execute dynamics with the `run_dynamics` function, define configuration objects first. Two configuration types are `Config_FD` and `Config_sym`. See help for Config_FD and Config_sym for more information.
 
 Execution using ForwardDiff differentiation:
 ```julia
 using StayOnTheRidge
 
-n = 2 # number of variables
-min_coords = [2] # indices of minimizing coordinates
-γ = 1e-3 # step size
-ϵ = 1e-1 # precision
-
 f(x) = 2*x[1]*x[2]^2-x[1]^2-x[2]
-config = Config_FD(f, n, min_coords, γ, ϵ, [[-1,1],[-1,1]])
+n = 2
+min_coords = [2]
+γ = 1e-3
+ϵ = 1e-1
+domain = Hyperrectangle([[-1,1],[-1,1]])
+
+config = Config_FD(f, n, min_coords, γ, ϵ, domain)
 elapsed = @elapsed min_max, trajectory, m, k = run_dynamics(config)
-pretty_print(config.H(min_max), elapsed, m, k)
-plot_trajectory2D(config.H(min_max), config.H.(trajectory), [-1,1], [-1,1])
-plot_contour2D(config.H(min_max), config.f, [-1,1], [-1,1])
-plot_surface(config.H(min_max), config.f, [-1,1], [-1,1])
+pretty_print(min_max, elapsed, m, k)
+plot_trajectory2D(min_max, trajectory, config.domain)
+plot_contour2D(min_max, config.f, config.domain)
+plot_surface(min_max, config.f, config.domain)
 ```
 
 <p align="center">
