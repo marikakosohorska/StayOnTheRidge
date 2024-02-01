@@ -15,12 +15,12 @@ The package is not registered and this can be installed in the following way
 ## Description
 The STON'R algorithm involves the computation of the gradient and hessian of the function. This implementation is able to switch between symbolic computation (using Symbolics.jl) and automatic differentiation (using ForwardDiff.jl package).
 
+The algorithm operates on the unit hypercube $\[0,1\]^n$. The domain can be extended to the general convex set $K$ by defining mapping $H$ from $\[0,1\]^n$ to $K$.
+The current implementation can operate on $\[0,1\]^n$ or on the general hyperrectangle.
+
 ## Example
 ### Function $2x_1x_2^2 - x_1^2 - x_2$ on the square $\[-1,1\]^2$
-The algorithm operates on the unit hypercube $\[0,1\]^n$. The domain can be extended to the general convex set $K$ by defining mapping $H$ from $\[0,1\]^n$ to $K$.
-The current implementation is able to operate on $\[0,1\]^n$ or the general hyperrectangle.
-
-To execute dynamics with the `run_dynamics` function, define configuration objects first. Two configuration types are `Config_FD` and `Config_sym`. See help for Config_FD and Config_sym for more information.
+To execute dynamics with the `run_dynamics` function, define configuration object first. Two configuration types are `Config_FD` and `Config_sym`. See help for Config_FD and Config_sym for more information.
 
 Execution using ForwardDiff differentiation:
 ```julia
